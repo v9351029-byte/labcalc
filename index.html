@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>ЛабКальк</title>
+<meta name="theme-color" content="#1d242c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ЛабКальк">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#1d242c; --deep:#151a20; --panel:#232b34; --key:#2a333d; --key-hi:#323d48; --fn:#202830;
+  --line:#36424e; --text:#e7ecf0; --dim:#9aa6b1; --faint:#66727d;
+  --deg:#f2a33a; --deg-ink:#2a1700; --rad:#5aa9ff; --rad-ink:#04182e;
+  --ok:#7ad69a; --bad:#ff7a70;
+  --acc:var(--deg); --acc-ink:var(--deg-ink);
+  --mono:ui-monospace,"SF Mono","Roboto Mono","Cascadia Mono","DejaVu Sans Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Helvetica Neue",Arial,sans-serif;
+  --kh:clamp(30px,5.1vh,46px); --kfh:clamp(28px,4.4vh,40px);
+  color-scheme:dark;
+}
+html[data-theme=light]{
+  --bg:#e9eef1; --deep:#dfe5e9; --panel:#ffffff; --key:#ffffff; --key-hi:#f1f4f6; --fn:#f5f7f8;
+  --line:#c9d2d9; --text:#16202a; --dim:#55626e; --faint:#8a96a0;
+  --deg:#c46f00; --deg-ink:#fff; --rad:#1f6fd1; --rad-ink:#fff; --ok:#16834a; --bad:#c62f25;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: light){
+  html:not([data-theme=dark]):not([data-theme=light]){
+    --bg:#e9eef1; --deep:#dfe5e9; --panel:#ffffff; --key:#ffffff; --key-hi:#f1f4f6; --fn:#f5f7f8;
+    --line:#c9d2d9; --text:#16202a; --dim:#55626e; --faint:#8a96a0;
+    --deg:#c46f00; --deg-ink:#fff; --rad:#1f6fd1; --rad-ink:#fff; --ok:#16834a; --bad:#c62f25;
+    color-scheme:light;
+  }
+}
+body[data-mode=rad]{ --acc:var(--rad); --acc-ink:var(--rad-ink); }
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.4 var(--sans);-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.app{display:grid;grid-template-rows:auto 1fr auto;height:100%;max-width:560px;margin:0 auto;
+  padding-top:env(safe-area-inset-top,0px)}
+
+/* ===== переключатель углов ===== */
+.top{padding:8px 10px 6px;background:var(--bg);border-bottom:3px solid var(--acc);transition:border-color .2s}
+.angle{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--deep);padding:4px;border-radius:14px}
+.angle button{height:50px;border:0;border-radius:10px;background:transparent;color:var(--faint);
+  font-weight:800;font-size:17px;letter-spacing:.06em;display:flex;align-items:center;justify-content:center;gap:10px;transition:background .15s,color .15s}
+.angle button .g{font-size:26px;font-weight:700;line-height:1;letter-spacing:0}
+.angle button[data-mode=deg].on{background:var(--deg);color:var(--deg-ink);box-shadow:0 0 0 1px var(--deg),0 4px 14px -4px var(--deg)}
+.angle button[data-mode=rad].on{background:var(--rad);color:var(--rad-ink);box-shadow:0 0 0 1px var(--rad),0 4px 14px -4px var(--rad)}
+.angle button:not(.on):hover{color:var(--dim)}
+
+main{overflow:hidden;position:relative}
+.tab{height:100%;overflow:auto;-webkit-overflow-scrolling:touch}
+.tab[hidden]{display:none}
+#tab-calc{display:flex;flex-direction:column;overflow:hidden}
+
+/* ===== экран ===== */
+.screen{flex:1;min-height:0;display:flex;flex-direction:column;margin:8px 10px 0;border-radius:14px;background:var(--deep);
+  border:1px solid var(--line);overflow:hidden;
+  background-image:linear-gradient(var(--grid,rgba(255,255,255,.035)) 1px,transparent 1px),linear-gradient(90deg,var(--grid,rgba(255,255,255,.035)) 1px,transparent 1px);
+  background-size:10px 10px}
+html[data-theme=light] .screen{--grid:rgba(30,60,90,.06)}
+#ed{flex:1;min-height:56px;width:100%;resize:none;border:0;background:transparent;padding:10px 12px 4px;
+  font:500 19px/1.45 var(--mono);color:var(--text);outline:none;caret-color:var(--acc)}
+#ed::placeholder{color:var(--faint);font-size:15px}
+.rows{max-height:34%;overflow:auto;border-top:1px dashed var(--line);font:14px/1.35 var(--mono)}
+.rows:empty{display:none}
+.row{display:grid;grid-template-columns:22px 1fr auto;gap:6px;padding:4px 10px;align-items:baseline;cursor:pointer}
+.row:active{background:var(--panel)}
+.row .ln{color:var(--faint);font-size:11px}
+.row .src{color:var(--dim);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.row .val{color:var(--text);font-weight:600;text-align:right;white-space:nowrap}
+.row.err .val{color:var(--bad);font-weight:500;font-family:var(--sans);font-size:12.5px;white-space:normal;max-width:60vw}
+.display{display:flex;align-items:center;gap:8px;padding:6px 8px 8px 12px;border-top:1px solid var(--line);background:var(--panel)}
+.badge{flex:none;font:800 12px/1 var(--sans);letter-spacing:.06em;padding:6px 8px;border-radius:7px;background:var(--acc);color:var(--acc-ink)}
+#out{flex:1;min-width:0;text-align:right;font:700 30px/1.15 var(--mono);overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+#out.err{font:500 14px/1.3 var(--sans);color:var(--bad);white-space:normal}
+#out.flash{animation:fl .35s}
+@keyframes fl{from{color:var(--acc)}}
+.icon-btn{flex:none;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--dim);font-size:17px}
+
+.toolbar{display:flex;gap:6px;padding:7px 10px 5px;overflow-x:auto;scrollbar-width:none}
+.toolbar button{flex:1 0 auto;height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:14px;white-space:nowrap}
+.toolbar button.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+
+/* ===== клавиатура ===== */
+.keypad{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding:2px 10px 8px}
+.k{height:var(--kh);border:0;border-radius:10px;background:var(--key);color:var(--text);font:500 21px/1 var(--sans);
+  box-shadow:0 1px 0 rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none}
+.k:active{background:var(--key-hi);transform:translateY(1px)}
+.k.f{height:var(--kfh);background:var(--fn);font:500 15px/1 var(--sans);color:var(--text)}
+.k.f.arc{font-size:13px}
+.k.f.trig{color:var(--acc);font-weight:700}
+.k.op{background:var(--key-hi);font-size:22px}
+.k.ctl{background:var(--key-hi);font-size:18px;color:var(--dim)}
+.k.go{grid-column:span 4;background:var(--acc);color:var(--acc-ink);font:800 18px/1 var(--sans);letter-spacing:.02em}
+.k.num{font-family:var(--mono);font-weight:600}
+.k sup{font-size:.6em}
+
+/* ===== нижние вкладки ===== */
+.tabbar{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:var(--panel);
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabbar button{border:0;background:transparent;color:var(--faint);height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px}
+.tabbar svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabbar button.on{color:var(--text)}
+.tabbar button.on svg{stroke:var(--acc)}
+
+/* ===== панели, формы ===== */
+.pad{padding:12px 12px 28px}
+.seg{display:flex;gap:4px;background:var(--deep);padding:4px;border-radius:12px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none}
+.seg button{flex:1 0 auto;border:0;background:transparent;color:var(--dim);height:38px;padding:0 12px;border-radius:9px;font-weight:600;font-size:14px;white-space:nowrap}
+.seg button.on{background:var(--panel);color:var(--text);box-shadow:0 1px 0 var(--line) inset,0 0 0 1px var(--line)}
+.pane[hidden]{display:none}
+h2{font-size:19px;margin:4px 0 4px}
+h3{font-size:16px;margin:18px 0 6px}
+.lead{color:var(--dim);margin:0 0 12px;font-size:14px}
+.fl{display:block;font-size:13px;color:var(--dim);margin:0 0 10px}
+.fl input,.fl textarea,.fl select,.inp{display:block;width:100%;margin-top:4px;padding:10px 11px;border-radius:10px;border:1px solid var(--line);
+  background:var(--deep);color:var(--text);font:500 17px/1.3 var(--mono);outline:none}
+.fl textarea{resize:vertical;min-height:70px;font-size:16px}
+.fl input:focus,.fl textarea:focus,.fl select:focus,.inp:focus{border-color:var(--acc)}
+.fl input.bad,.inp.bad{border-color:var(--bad)}
+.fl input.calc{border-color:var(--ok);color:var(--ok)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}
+.btn{height:44px;padding:0 16px;border-radius:11px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-weight:600;font-size:15px}
+.btn.primary{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:800}
+.btn.wide{width:100%}
+.btn.sm{height:36px;padding:0 12px;font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.chips button{height:34px;min-width:44px;padding:0 12px;border-radius:17px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:600 14px var(--mono)}
+.chips button.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text);margin:6px 0}
+.chk input{width:20px;height:20px;accent-color:var(--acc)}
+
+.out{margin-top:6px}
+.result{border:1px solid var(--line);border-left:4px solid var(--acc);background:var(--panel);border-radius:12px;padding:12px 14px;margin:8px 0}
+.result .main{font:700 22px/1.3 var(--mono);word-break:break-word}
+.result .sub{color:var(--dim);font-size:13.5px;margin-top:4px}
+.steps{font-size:14.5px;line-height:1.7;margin:8px 0}
+.steps div{padding:3px 0;border-bottom:1px dashed var(--line)}
+.steps b{font-family:var(--mono)}
+.m{font-family:var(--mono)}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 3px;line-height:1.15;font-size:.92em}
+.frac>span:first-child{border-bottom:1px solid currentColor;padding:0 3px 1px}
+.frac>span:last-child{padding:1px 3px 0}
+.sq{white-space:nowrap}.sq>span{border-top:1px solid currentColor;padding:1px 2px 0 1px;margin-left:1px}
+.tbl{width:100%;border-collapse:collapse;font:13.5px/1.3 var(--mono);margin:8px 0}
+.tbl th,.tbl td{border:1px solid var(--line);padding:5px 6px;text-align:right}
+.tbl th{color:var(--dim);font-family:var(--sans);font-weight:600;background:var(--deep)}
+.tblwrap{overflow-x:auto}
+.warn{color:var(--bad);font-size:13.5px}
+.note{color:var(--dim);font-size:13px;line-height:1.5}
+.big{font:700 26px/1.25 var(--mono);color:var(--acc);margin:4px 0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:15px;margin:6px 0}
+.kv span:nth-child(odd){color:var(--dim)}
+.kv span:nth-child(even){font-family:var(--mono);font-weight:600;text-align:right}
+.ulist{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:8px}
+.ulist button{display:flex;justify-content:space-between;width:100%;border:0;border-bottom:1px solid var(--line);background:var(--panel);padding:10px 12px;font-size:15px;text-align:left;gap:10px}
+.ulist button:last-child{border-bottom:0}
+.ulist button span:last-child{font-family:var(--mono);font-weight:600;text-align:right;word-break:break-all}
+.ulist button.src{background:var(--deep)}
+.varrow{display:grid;grid-template-columns:64px 1fr 1fr 34px;gap:6px;margin-bottom:6px;align-items:end}
+.varrow .inp{margin:0;padding:9px 8px;font-size:16px}
+.varrow .nm{font:700 16px var(--mono);text-align:center;padding:10px 0;background:var(--panel);border-radius:10px;border:1px solid var(--line);overflow:hidden;text-overflow:ellipsis}
+.varrow button{height:40px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--dim)}
+.varhead{display:grid;grid-template-columns:64px 1fr 1fr 34px;gap:6px;font-size:12px;color:var(--dim);margin-bottom:4px}
+canvas.plot{width:100%;aspect-ratio:4/3;background:var(--deep);border:1px solid var(--line);border-radius:12px;display:block;margin:8px 0}
+details{border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin:10px 0;background:var(--panel)}
+summary{font-weight:600;cursor:pointer}
+.help p,.help li{font-size:14.5px;line-height:1.55}
+.help code,.code{font-family:var(--mono);background:var(--deep);padding:1px 5px;border-radius:5px;font-size:.95em}
+.help ul{padding-left:20px}
+
+/* ===== шторки ===== */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;max-height:88%;z-index:21;background:var(--bg);
+  border-radius:18px 18px 0 0;border:1px solid var(--line);display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px);
+  animation:up .18s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:.4}}
+.sheet[hidden],.sheet-bg[hidden]{display:none}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+.sheet-head b{font-size:16px}
+.sheet-head button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--dim);font-size:16px}
+.sheet-body{overflow:auto;padding:12px 14px 18px}
+.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.fgrid button{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 6px;text-align:left;min-height:52px}
+.fgrid b{display:block;font:700 15px var(--mono)}
+.fgrid small{color:var(--dim);font-size:11.5px;line-height:1.2;display:block;margin-top:2px}
+.hist button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;padding:10px 4px}
+.hist .hx{font:14px/1.35 var(--mono);white-space:pre-wrap;color:var(--dim);max-height:4.1em;overflow:hidden}
+.hist .hv{font:700 16px var(--mono);margin-top:2px}
+#ocrPrev{width:100%;max-height:200px;object-fit:contain;border-radius:10px;border:1px solid var(--line);background:#fff;display:block;margin:8px 0}
+#ocrPrev[hidden]{display:none}
+.status{font-size:13.5px;color:var(--dim);margin:6px 0}
+.status.ok{color:var(--ok)}.status.bad{color:var(--bad)}
+progress{width:100%;height:6px;accent-color:var(--acc)}
+.filebtn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.toast{position:fixed;left:50%;top:calc(76px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:40;background:var(--text);color:var(--bg);
+  padding:10px 14px;border-radius:12px;font-size:14px;display:flex;gap:12px;align-items:center;max-width:92vw;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.toast button{border:0;background:transparent;color:var(--acc);font-weight:800;filter:brightness(.8)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+@media (min-height:820px){ :root{--kh:48px;--kfh:40px} }
+</style>
+</head>
+<body data-mode="deg">
+<div class="app">
+  <header class="top">
+    <div class="angle" role="radiogroup" aria-label="Режим углов">
+      <button role="radio" data-mode="deg"><span class="g">°</span>ГРАДУСЫ</button>
+      <button role="radio" data-mode="rad"><span class="g">π</span>РАДИАНЫ</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= КАЛЬКУЛЯТОР ================= -->
+    <section class="tab" id="tab-calc">
+      <div class="screen">
+        <textarea id="ed" spellcheck="false" autocomplete="off" autocapitalize="off" inputmode="none"
+          placeholder="Пиши выражение. Можно в несколько строк:&#10;g = 9,81&#10;t = √(2·1,5/g)"></textarea>
+        <div class="rows" id="rows"></div>
+        <div class="display">
+          <span class="badge" id="badge">DEG</span>
+          <output id="out">0</output>
+          <button class="icon-btn" id="copyOut" title="Скопировать результат" aria-label="Скопировать результат">⧉</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button data-act="ocr">Фото → текст</button>
+        <button data-act="kbd" id="kbdBtn">Буквы ⌨</button>
+        <button data-act="fx">Ещё функции</button>
+        <button data-act="const">Константы</button>
+        <button data-act="hist">История</button>
+      </div>
+      <div class="keypad" id="keypad"></div>
+    </section>
+
+    <!-- ================= ЛАБА ================= -->
+    <section class="tab" id="tab-lab" hidden>
+      <div class="pad">
+        <div class="seg" data-seg="lab">
+          <button data-p="st">Прямые</button>
+          <button data-p="ind">Косвенные</button>
+          <button data-p="mnk">График МНК</button>
+        </div>
+
+        <div class="pane" data-pane="st">
+          <p class="lead">Среднее, СКО, коэффициент Стьюдента, погрешность и округлённый ответ.</p>
+          <label class="fl">Измерения — через пробел, «;» или с новой строки
+            <textarea id="stIn" rows="3" placeholder="2,01 2,04 1,98 2,03 2,00"></textarea></label>
+          <div class="g3">
+            <label class="fl">Δ прибора<input id="stDi" inputmode="decimal" placeholder="0,01"></label>
+            <label class="fl">Довер. P<select id="stP"><option value="0.9">0,90</option><option value="0.95" selected>0,95</option><option value="0.99">0,99</option></select></label>
+            <label class="fl">Обозначение<input id="stName" placeholder="T" autocapitalize="off"></label>
+          </div>
+          <label class="fl">Единицы (для ответа)<input id="stUnit" placeholder="с"></label>
+          <div class="btnrow">
+            <button class="btn primary" id="stGo">Посчитать</button>
+            <button class="btn" id="stToInd">В косвенные</button>
+            <button class="btn" id="stCopy">Копировать</button>
+          </div>
+          <div class="out" id="stOut"></div>
+        </div>
+
+        <div class="pane" data-pane="ind" hidden>
+          <p class="lead">Погрешность величины, которая считается по формуле: Δf = √Σ(∂f/∂xᵢ · Δxᵢ)². Производные считаются сами.</p>
+          <label class="fl">Формула (между буквами ставь · или пробел)
+            <input id="indF" placeholder="g = 4π²·L/T²" autocapitalize="off" spellcheck="false"></label>
+          <div class="btnrow"><button class="btn sm" id="indDetect">Найти переменные</button><button class="btn sm" id="indAdd">+ строка</button></div>
+          <div class="varhead"><span>Имя</span><span>Значение</span><span>Δ (абс.)</span><span></span></div>
+          <div id="indRows"></div>
+          <label class="fl">Единицы результата<input id="indUnit" placeholder="м/с²"></label>
+          <div class="btnrow"><button class="btn primary" id="indGo">Посчитать</button><button class="btn" id="indCopy">Копировать</button></div>
+          <div class="out" id="indOut"></div>
+        </div>
+
+        <div class="pane" data-pane="mnk" hidden>
+          <p class="lead">Метод наименьших квадратов: прямая y = kx + b, погрешности k и b, график.</p>
+          <label class="fl">Точки: в каждой строке x и y
+            <textarea id="mkIn" rows="5" placeholder="1 2,1&#10;2 3,9&#10;3 6,2&#10;4 7,8&#10;5 10,1"></textarea></label>
+          <div class="g3">
+            <label class="fl">Ось X<input id="mkX" placeholder="x"></label>
+            <label class="fl">Ось Y<input id="mkY" placeholder="y"></label>
+            <label class="fl">Довер. P<select id="mkP"><option value="0.9">0,90</option><option value="0.95" selected>0,95</option><option value="0.99">0,99</option></select></label>
+          </div>
+          <label class="chk"><input type="checkbox" id="mkO"> Прямая через ноль (b = 0)</label>
+          <div class="btnrow"><button class="btn primary" id="mkGo">Посчитать</button><button class="btn" id="mkCopy">Копировать</button></div>
+          <canvas class="plot" id="mkCv" hidden></canvas>
+          <div class="out" id="mkOut"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ЖИЗНЬ ================= -->
+    <section class="tab" id="tab-life" hidden>
+      <div class="pad">
+        <div class="seg" data-seg="life">
+          <button data-p="mix">Смесь 2Т</button>
+          <button data-p="units">Единицы</button>
+          <button data-p="elec">Электрика</button>
+          <button data-p="tri">Треугольник</button>
+          <button data-p="pct">Проценты</button>
+          <button data-p="trip">Поездка</button>
+        </div>
+
+        <div class="pane" data-pane="mix">
+          <h2>Бензин + масло для 2Т</h2>
+          <div class="fl">Пропорция 1 : N (N частей бензина на 1 часть масла)
+            <div class="chips" id="mxRc"></div>
+            <input class="inp" id="mxN" inputmode="decimal" value="50"></div>
+          <label class="fl">Бензина, литров<input id="mxV" inputmode="decimal" value="5"></label>
+          <div class="chips" id="mxVc"></div>
+          <div class="result"><div class="sub">Масла нужно</div><div class="big" id="mxOut">—</div><div class="sub" id="mxSub"></div></div>
+          <h3>Наоборот: есть масло</h3>
+          <label class="fl">Масла, мл<input id="mxOil" inputmode="decimal" placeholder="100"></label>
+          <div class="kv" id="mxOut2"></div>
+          <h3>Исправить готовую смесь</h3>
+          <div class="g3">
+            <label class="fl">Смеси есть, л<input id="mxFv" inputmode="decimal" placeholder="5"></label>
+            <label class="fl">Сейчас 1:<input id="mxF1" inputmode="decimal" placeholder="25"></label>
+            <label class="fl">Нужно 1:<input id="mxF2" inputmode="decimal" placeholder="50"></label>
+          </div>
+          <div class="kv" id="mxOut3"></div>
+          <p class="note">Пропорцию бери из инструкции к мотору и к маслу — для разных моторов и масел она разная (часто 1:50 у современной техники на синтетике, 1:25–1:33 у старой и на обкатке).</p>
+        </div>
+
+        <div class="pane" data-pane="units" hidden>
+          <h2>Перевод единиц</h2>
+          <div class="chips" id="unCat"></div>
+          <div class="g2">
+            <label class="fl">Значение<input id="unV" inputmode="decimal" value="1"></label>
+            <label class="fl">Из<select id="unFrom"></select></label>
+          </div>
+          <div class="ulist" id="unList"></div>
+          <p class="note">Нажми на строку — значение скопируется.</p>
+        </div>
+
+        <div class="pane" data-pane="elec" hidden>
+          <h2>Закон Ома и мощность</h2>
+          <p class="lead">Заполни любые два поля и нажми «Рассчитать».</p>
+          <div class="g2">
+            <label class="fl">U, В<input id="ohU" inputmode="decimal"></label>
+            <label class="fl">I, А<input id="ohI" inputmode="decimal"></label>
+            <label class="fl">R, Ом<input id="ohR" inputmode="decimal"></label>
+            <label class="fl">P, Вт<input id="ohP" inputmode="decimal"></label>
+          </div>
+          <div class="btnrow"><button class="btn primary" id="ohGo">Рассчитать</button><button class="btn" id="ohClr">Очистить</button></div>
+          <h3>Делитель напряжения</h3>
+          <div class="g3">
+            <label class="fl">Uвх, В<input id="dvU" inputmode="decimal" placeholder="12"></label>
+            <label class="fl">R1 (верх)<input id="dvR1" inputmode="decimal" placeholder="10000"></label>
+            <label class="fl">R2 (низ)<input id="dvR2" inputmode="decimal" placeholder="4700"></label>
+          </div>
+          <div class="kv" id="dvOut"></div>
+          <h3>Аккумуляторная сборка</h3>
+          <div class="g4">
+            <label class="fl">S<input id="bS" inputmode="decimal" value="13"></label>
+            <label class="fl">P<input id="bP" inputmode="decimal" value="4"></label>
+            <label class="fl">Ач ячейки<input id="bAh" inputmode="decimal" value="2,5"></label>
+            <label class="fl">А ячейки<input id="bI" inputmode="decimal" value="10"></label>
+          </div>
+          <div class="g3">
+            <label class="fl">Vном<input id="bVn" inputmode="decimal" value="3,6"></label>
+            <label class="fl">Vmax<input id="bVx" inputmode="decimal" value="4,2"></label>
+            <label class="fl">Vmin<input id="bVm" inputmode="decimal" value="3,0"></label>
+          </div>
+          <div class="kv" id="bOut"></div>
+        </div>
+
+        <div class="pane" data-pane="tri" hidden>
+          <h2>Прямоугольный треугольник</h2>
+          <p class="lead">Любые две стороны → остальное. Углы — в текущем режиме (градусы или радианы).</p>
+          <div class="g3">
+            <label class="fl">a (катет)<input id="trA" inputmode="decimal" placeholder="3"></label>
+            <label class="fl">b (катет)<input id="trB" inputmode="decimal" placeholder="4"></label>
+            <label class="fl">c (гипотенуза)<input id="trC" inputmode="decimal"></label>
+          </div>
+          <div class="kv" id="trOut"></div>
+          <p class="note">α лежит напротив a: α = arctg(a/b). Уклон в % — это a/b·100 (подъём a на длине b).</p>
+        </div>
+
+        <div class="pane" data-pane="pct" hidden>
+          <h2>Проценты и пропорции</h2>
+          <h3>X % от числа</h3>
+          <div class="g2"><label class="fl">X, %<input id="p1x" inputmode="decimal" placeholder="15"></label><label class="fl">Число<input id="p1y" inputmode="decimal" placeholder="2400"></label></div>
+          <div class="kv" id="p1o"></div>
+          <h3>Сколько % составляет A от B</h3>
+          <div class="g2"><label class="fl">A<input id="p2a" inputmode="decimal"></label><label class="fl">B<input id="p2b" inputmode="decimal"></label></div>
+          <div class="kv" id="p2o"></div>
+          <h3>Изменение от A до B</h3>
+          <div class="g2"><label class="fl">Было A<input id="p3a" inputmode="decimal"></label><label class="fl">Стало B<input id="p3b" inputmode="decimal"></label></div>
+          <div class="kv" id="p3o"></div>
+          <h3>Пропорция a : b = c : x</h3>
+          <div class="g3"><label class="fl">a<input id="p4a" inputmode="decimal"></label><label class="fl">b<input id="p4b" inputmode="decimal"></label><label class="fl">c<input id="p4c" inputmode="decimal"></label></div>
+          <div class="kv" id="p4o"></div>
+        </div>
+
+        <div class="pane" data-pane="trip" hidden>
+          <h2>Топливо и деньги на поездку</h2>
+          <div class="g2">
+            <label class="fl">Расстояние, км<input id="tpD" inputmode="decimal" placeholder="300"></label>
+            <label class="fl">Расход, л/100 км<input id="tpC" inputmode="decimal" placeholder="7,5"></label>
+            <label class="fl">Цена, ₽/л<input id="tpP" inputmode="decimal" placeholder="60"></label>
+            <label class="fl">Человек<input id="tpN" inputmode="decimal" value="1"></label>
+          </div>
+          <div class="kv" id="tpOut"></div>
+          <h3>Реальный расход по заправке</h3>
+          <div class="g2">
+            <label class="fl">Залил, л<input id="tfL" inputmode="decimal"></label>
+            <label class="fl">Проехал, км<input id="tfK" inputmode="decimal"></label>
+          </div>
+          <div class="kv" id="tfOut"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= СПРАВКА ================= -->
+    <section class="tab" id="tab-help" hidden>
+      <div class="pad help" id="helpBody"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button data-tab="calc"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg>Калькулятор</button>
+    <button data-tab="lab"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7.5 15h9"/></svg>Лаба</button>
+    <button data-tab="life"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z"/></svg>Жизнь</button>
+    <button data-tab="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17h.01"/></svg>Справка</button>
+  </nav>
+</div>
+
+<!-- шторка общая -->
+<div class="sheet-bg" id="sheetBg" hidden></div>
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-head"><b id="sheetTitle"></b><button class="sheet-x" aria-label="Закрыть">✕</button></div>
+  <div class="sheet-body" id="sheetBody"></div>
+</div>
+
+<!-- шторка распознавания -->
+<div class="sheet" id="ocrSheet" hidden>
+  <div class="sheet-head"><b>Фото → текст</b><button class="sheet-x" aria-label="Закрыть">✕</button></div>
+  <div class="sheet-body">
+    <div class="btnrow">
+      <label class="btn primary filebtn">Сфотографировать или выбрать<input type="file" accept="image/*" id="ocrFile"></label>
+      <button class="btn" id="ocrPaste">Вставить из буфера</button>
+    </div>
+    <label class="chk"><input type="checkbox" id="ocrDigits" checked> Только цифры и знаки (для таблиц)</label>
+    <label class="chk"><input type="checkbox" id="ocrBin" checked> Усилить контраст (ч/б)</label>
+    <label class="fl">Что на фото<select id="ocrPsm"><option value="6">Таблица или несколько строк</option><option value="7">Одна строка</option><option value="11">Числа вразброс</option></select></label>
+    <canvas id="ocrPrev" hidden></canvas>
+    <div class="status" id="ocrStatus">Распознавание запустится, когда выберешь фото.</div>
+    <progress id="ocrProg" max="1" value="0" hidden></progress>
+    <label class="fl">Распознанный текст — проверь и исправь
+      <textarea id="ocrText" rows="6" spellcheck="false" autocapitalize="off"></textarea></label>
+    <div class="btnrow">
+      <button class="btn sm" id="ocrClean">Почистить</button>
+      <button class="btn sm" id="ocrToSt">В статистику</button>
+      <button class="btn sm" id="ocrToMnk">В МНК</button>
+    </div>
+    <button class="btn primary wide" id="ocrGo">Посчитать</button>
+    <details><summary>Распознаёт плохо или не запускается</summary>
+      <p class="note">Лучше всего читаются печатные цифры: снимай ровно, при хорошем свете, обрежь фото до нужной таблицы. Рукописные формулы распознаются плохо — их быстрее набрать.</p>
+      <p class="note">Запасной путь, тоже без интернета: открой фото в галерее → Google Объектив / «Текст на фото» (Android) или «Live Text» (iPhone) → выдели и скопируй текст → кнопка «Вставить из буфера».</p>
+    </details>
+  </div>
+</div>
+
+<script>
+/* ===================== ЯДРО ВЫЧИСЛЕНИЙ ===================== */
+const Calc = (() => {
+  'use strict';
+  const S = { mode: 'deg' };
+  class CalcError extends Error {}
+  const err = (m) => { throw new CalcError(m); };
+  const need = (c, m) => { if (!c) err(m); };
+  const D2R = Math.PI / 180;
+  const toR = (x) => (S.mode === 'deg' ? (x % 360) * D2R : x);
+  const fromR = (r) => (S.mode === 'deg' ? r / D2R : r);
+  const snap = (v) => (Math.abs(v) < 1e-14 ? 0 : v);
+
+  /* ---------- функции ---------- */
+  const LG = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+    -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  function gamma(z) {
+    if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+    z -= 1; let x = LG[0];
+    for (let i = 1; i < 9; i++) x += LG[i] / (z + i);
+    const t = z + 7.5;
+    return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
+  }
+  function fact(n) {
+    if (Number.isInteger(n)) {
+      need(n >= 0, 'Факториал отрицательного целого не определён');
+      if (n > 170) return Infinity;
+      let r = 1; for (let i = 2; i <= n; i++) r *= i; return r;
+    }
+    return gamma(n + 1);
+  }
+  function powr(a, b) {
+    if (a === 0 && b < 0) err('Ноль в отрицательной степени — деление на ноль');
+    if (a < 0 && !Number.isInteger(b)) {
+      const inv = 1 / b, k = Math.round(inv);
+      if (Math.abs(inv - k) < 1e-9 && Math.abs(k % 2) === 1) return -Math.pow(-a, b);
+      err('Отрицательное число в дробной степени');
+    }
+    return Math.pow(a, b);
+  }
+
+  const FN = Object.create(null);
+  const def = (names, min, max, f) => names.split(' ').forEach((n) => { FN[n] = { min, max, f }; });
+  def('sin', 1, 1, (x) => snap(Math.sin(toR(x))));
+  def('cos', 1, 1, (x) => snap(Math.cos(toR(x))));
+  def('tg tan', 1, 1, (x) => { const r = toR(x), c = Math.cos(r); need(Math.abs(c) > 1e-12, 'tg не определён: cos = 0'); return snap(Math.sin(r) / c); });
+  def('ctg cot', 1, 1, (x) => { const r = toR(x), s = Math.sin(r); need(Math.abs(s) > 1e-12, 'ctg не определён: sin = 0'); return snap(Math.cos(r) / s); });
+  def('arcsin asin', 1, 1, (x) => { need(Math.abs(x) <= 1 + 1e-12, 'arcsin: аргумент должен быть от −1 до 1'); return fromR(Math.asin(Math.max(-1, Math.min(1, x)))); });
+  def('arccos acos', 1, 1, (x) => { need(Math.abs(x) <= 1 + 1e-12, 'arccos: аргумент должен быть от −1 до 1'); return fromR(Math.acos(Math.max(-1, Math.min(1, x)))); });
+  def('arctg arctan atan', 1, 1, (x) => fromR(Math.atan(x)));
+  def('arcctg arccot acot', 1, 1, (x) => fromR(Math.PI / 2 - Math.atan(x)));
+  def('atan2', 2, 2, (y, x) => { need(x !== 0 || y !== 0, 'atan2(0; 0) не определён'); return fromR(Math.atan2(y, x)); });
+  def('sh sinh', 1, 1, Math.sinh);
+  def('ch cosh', 1, 1, Math.cosh);
+  def('th tanh', 1, 1, Math.tanh);
+  def('cth coth', 1, 1, (x) => { need(x !== 0, 'cth(0) не определён'); return 1 / Math.tanh(x); });
+  def('arsh asinh', 1, 1, Math.asinh);
+  def('arch acosh', 1, 1, (x) => { need(x >= 1, 'arch: нужно x ≥ 1'); return Math.acosh(x); });
+  def('arth atanh', 1, 1, (x) => { need(Math.abs(x) < 1, 'arth: нужно |x| < 1'); return Math.atanh(x); });
+  def('ln', 1, 1, (x) => { need(x > 0, 'ln: аргумент должен быть > 0'); return Math.log(x); });
+  def('lg log10', 1, 1, (x) => { need(x > 0, 'lg: аргумент должен быть > 0'); return Math.log10(x); });
+  def('log2', 1, 1, (x) => { need(x > 0, 'log2: аргумент должен быть > 0'); return Math.log2(x); });
+  def('log', 1, 2, (a, b) => {
+    if (b === undefined) { need(a > 0, 'log: аргумент должен быть > 0'); return Math.log10(a); }
+    need(a > 0 && a !== 1, 'log: основание должно быть > 0 и ≠ 1');
+    need(b > 0, 'log: аргумент должен быть > 0');
+    return Math.log(b) / Math.log(a);
+  });
+  def('exp', 1, 1, Math.exp);
+  def('sqrt', 1, 1, (x) => { need(x >= 0, '√ из отрицательного числа'); return Math.sqrt(x); });
+  def('cbrt', 1, 1, Math.cbrt);
+  def('root', 2, 2, (x, n) => {
+    need(n !== 0, 'Корень нулевой степени не бывает');
+    if (x < 0) { need(Number.isInteger(n) && Math.abs(n) % 2 === 1, 'Корень чётной степени из отрицательного'); return -Math.pow(-x, 1 / n); }
+    return Math.pow(x, 1 / n);
+  });
+  def('abs', 1, 1, Math.abs);
+  def('sign', 1, 1, Math.sign);
+  def('floor', 1, 1, Math.floor);
+  def('ceil', 1, 1, Math.ceil);
+  def('round', 1, 2, (x, n = 0) => roundAt(x, n));
+  def('min', 1, 99, Math.min);
+  def('max', 1, 99, Math.max);
+  def('mean', 1, 99, (...a) => a.reduce((s, v) => s + v, 0) / a.length);
+  def('hyp', 2, 2, Math.hypot);
+  def('mod', 2, 2, (a, b) => { need(b !== 0, 'mod: деление на ноль'); return ((a % b) + b) % b; });
+  def('fact', 1, 1, fact);
+  def('deg', 1, 1, (r) => r / D2R);
+  def('rad', 1, 1, (d) => d * D2R);
+  const FN_SORTED = Object.keys(FN).filter((f) => !/\d$/.test(f)).sort((a, b) => b.length - a.length);
+
+  /* ---------- нормализация и лексер ---------- */
+  const SUP = { '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4', '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9', '⁻': '-', '⁺': '+' };
+  function normalize(s) {
+    return String(s)
+      .replace(/[\u00a0\u2009\u202f]/g, ' ')
+      .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺]+/g, (m) => '^(' + [...m].map((c) => SUP[c]).join('') + ')')
+      .replace(/\*\*/g, '^')
+      .replace(/[×✕✖·•∙⋅]/g, '*')
+      .replace(/[÷:]/g, '/')
+      .replace(/[−–—]/g, '-')
+      .replace(/，/g, ',');
+  }
+  const isD = (c) => c >= '0' && c <= '9';
+  const ID0 = /[A-Za-zА-Яа-яЁёΑ-Ωα-ω_]/;
+  const ID1 = /[A-Za-zА-Яа-яЁёΑ-Ωα-ω_0-9']/;
+
+  function lex(src) {
+    const s = normalize(src), T = [];
+    let i = 0;
+    while (i < s.length) {
+      const c = s[i];
+      if (c === ' ' || c === '\t') { i++; continue; }
+      if (isD(c) || (c === '.' && isD(s[i + 1]))) {
+        let j = i, str = '';
+        while (isD(s[j])) str += s[j++];
+        if ((s[j] === '.' || s[j] === ',') && isD(s[j + 1])) { str += '.'; j++; while (isD(s[j])) str += s[j++]; }
+        else if (s[j] === '.') j++;
+        if ((s[j] === 'e' || s[j] === 'E') && (isD(s[j + 1]) || ((s[j + 1] === '-' || s[j + 1] === '+') && isD(s[j + 2])))) {
+          str += 'e'; j++;
+          if (s[j] === '-' || s[j] === '+') str += s[j++];
+          while (isD(s[j])) str += s[j++];
+        }
+        T.push({ t: 'num', v: parseFloat(str) }); i = j; continue;
+      }
+      if (c === 'π') { T.push({ t: 'id', v: 'π' }); i++; continue; }
+      if (ID0.test(c)) {
+        let j = i;
+        while (j < s.length && ID1.test(s[j]) && s[j] !== 'π') j++;
+        const id = s.slice(i, j);
+        const mm = !(id in FN) && id.match(/^([^\d']+?)(\d+)$/);
+        if (mm && FN[mm[1]]) { T.push({ t: 'id', v: mm[1] }); i += mm[1].length; continue; } // sin30 → sin 30
+        T.push({ t: 'id', v: id }); i = j; continue;
+      }
+      if ('+-*/^()!%°|;=√∛'.includes(c)) { T.push({ t: 'op', v: c }); i++; continue; }
+      if (c === ',') { T.push({ t: 'op', v: ';' }); i++; continue; }
+      if (c === '[' || c === '{') { T.push({ t: 'op', v: '(' }); i++; continue; }
+      if (c === ']' || c === '}') { T.push({ t: 'op', v: ')' }); i++; continue; }
+      err(`Непонятный символ «${c}»`);
+    }
+    return T;
+  }
+
+  /* ---------- парсер (рекурсивный спуск → дерево) ---------- */
+  function parse(src, known) {
+    known = known || new Set();
+    const T = lex(src);
+    let i = 0, absDepth = 0;
+    const isOp = (v) => T[i] && T[i].t === 'op' && T[i].v === v;
+    const eat = (v) => (isOp(v) ? (i++, true) : false);
+    const startsOperand = () => {
+      const t = T[i];
+      if (!t) return false;
+      if (t.t !== 'op') return true;
+      return t.v === '(' || t.v === '√' || t.v === '∛' || (t.v === '|' && absDepth === 0);
+    };
+    function expr() {
+      let a = term();
+      while (isOp('+') || isOp('-')) { const op = T[i++].v; a = { k: 'bin', op, a, b: term() }; }
+      return a;
+    }
+    function term() {
+      let a = unary();
+      for (;;) {
+        if (isOp('*') || isOp('/')) { const op = T[i++].v; a = { k: 'bin', op, a, b: unary() }; }
+        else if (startsOperand()) {
+          if (T[i].t === 'num' && T[i - 1] && T[i - 1].t === 'num') err('Два числа подряд — пропущен знак действия?');
+          a = { k: 'bin', op: '*', a, b: unary() };
+        } else break;
+      }
+      return a;
+    }
+    function unary() {
+      if (eat('-')) return { k: 'neg', a: unary() };
+      if (eat('+')) return unary();
+      return power();
+    }
+    function power() {
+      const b = postfix();
+      if (eat('^')) return { k: 'bin', op: '^', a: b, b: unary() };
+      return b;
+    }
+    function postfix() {
+      let a = primary();
+      for (;;) {
+        if (eat('!')) a = { k: 'call', f: 'fact', args: [a] };
+        else if (eat('%')) a = { k: 'pct', a };
+        else if (eat('°')) a = { k: 'deg', a };
+        else break;
+      }
+      return a;
+    }
+    function primary() {
+      const t = T[i];
+      if (!t) err('Выражение не закончено');
+      if (t.t === 'num') { i++; return { k: 'n', v: t.v }; }
+      if (t.t === 'op') {
+        if (t.v === '(') {
+          i++; const a = expr();
+          if (!eat(')') && i < T.length) err('Не хватает «)»');
+          return a;
+        }
+        if (t.v === '√' || t.v === '∛') { i++; return { k: 'call', f: t.v === '√' ? 'sqrt' : 'cbrt', args: [unary()] }; }
+        if (t.v === '|') {
+          i++; absDepth++; const a = expr(); absDepth--;
+          if (!eat('|') && i < T.length) err('Не хватает закрывающей «|»');
+          return { k: 'call', f: 'abs', args: [a] };
+        }
+        if (t.v === '=') err('Знак «=» здесь лишний');
+        err(`Лишний знак «${t.v}»`);
+      }
+      i++;
+      return ident(t.v);
+    }
+    function splitKnown(name) {
+      const memo = new Map();
+      const rec = (s) => {
+        if (s === '') return [];
+        if (memo.has(s)) return memo.get(s);
+        let res = null;
+        for (let L = s.length; L >= 1 && !res; L--) {
+          const p = s.slice(0, L);
+          if (known.has(p)) { const r = rec(s.slice(L)); if (r) res = [{ k: 'v', name: p }, ...r]; }
+        }
+        memo.set(s, res); return res;
+      };
+      return rec(name);
+    }
+    function ident(name) {
+      if (known.has(name)) return { k: 'v', name };
+      if (name === 'π' || name === 'pi') return { k: 'n', v: Math.PI };
+      if (name === 'e') return { k: 'n', v: Math.E };
+      if (name === 'Ans' || name === 'ans') return { k: 'v', name: 'Ans' };
+      if (FN[name]) return call(name);
+      for (const f of FN_SORTED) {
+        if (name.length > f.length && name.startsWith(f)) return finishCall(f, [ident(name.slice(f.length))], null); // sinx → sin(x)
+      }
+      if (name.length > 1) {
+        const parts = splitKnown(name); // mgh → m·g·h, если m, g, h заданы
+        if (parts) return parts.reduce((a, b) => ({ k: 'bin', op: '*', a, b }));
+      }
+      return { k: 'v', name };
+    }
+    function call(name) {
+      let pw = null;
+      if (eat('^')) pw = postfix(); // sin^2(x) = (sin x)^2
+      let args;
+      if (eat('(')) {
+        args = [];
+        if (!isOp(')') && i < T.length) { args.push(expr()); while (eat(';')) args.push(expr()); }
+        if (!eat(')') && i < T.length) err(`Не хватает «)» после аргументов ${name}`);
+      } else {
+        if (i >= T.length) err(`${name}: нет аргумента`);
+        args = [unary()];
+      }
+      return finishCall(name, args, pw);
+    }
+    function finishCall(name, args, pw) {
+      const d = FN[name];
+      if (args.length < d.min || args.length > d.max) {
+        err(`${name}: нужно аргументов — ${d.min === d.max ? d.min : d.min + '…' + (d.max > 9 ? 'много' : d.max)} (разделитель «;»)`);
+      }
+      let node = { k: 'call', f: name, args };
+      if (pw) node = { k: 'bin', op: '^', a: node, b: pw };
+      return node;
+    }
+    if (!T.length) err('Пусто');
+    const ast = expr();
+    if (i < T.length) {
+      const t = T[i];
+      err(t.t === 'op' && t.v === ')' ? 'Лишняя «)»' : `Не понял «${t.v}» — пропущен знак?`);
+    }
+    return ast;
+  }
+
+  /* ---------- вычисление дерева ---------- */
+  const has = (o, k) => o && Object.prototype.hasOwnProperty.call(o, k);
+  function ev(n, env) {
+    switch (n.k) {
+      case 'n': return n.v;
+      case 'v':
+        if (has(env, n.name)) return env[n.name];
+        if (n.name === 'Ans') err('Ans пока пуст — сначала нажми «Посчитать»');
+        err(`Не знаю «${n.name}» — задай строкой: ${n.name} = …`);
+      // eslint-disable-next-line no-fallthrough
+      case 'neg': return -ev(n.a, env);
+      case 'pct': return ev(n.a, env) / 100;
+      case 'deg': { const v = ev(n.a, env); return S.mode === 'deg' ? v : v * D2R; }
+      case 'bin': {
+        const a = ev(n.a, env), b = ev(n.b, env);
+        switch (n.op) {
+          case '+': return a + b;
+          case '-': return a - b;
+          case '*': return a * b;
+          case '/': if (b === 0) err('Деление на ноль'); return a / b;
+          case '^': return powr(a, b);
+        }
+        break;
+      }
+      case 'call': return FN[n.f].f(...n.args.map((x) => ev(x, env)));
+    }
+    err('Внутренняя ошибка разбора');
+  }
+  function collectVars(ast, set = new Set()) {
+    if (!ast) return set;
+    if (ast.k === 'v' && ast.name !== 'Ans') set.add(ast.name);
+    if (ast.a) collectVars(ast.a, set);
+    if (ast.b) collectVars(ast.b, set);
+    if (ast.args) ast.args.forEach((x) => collectVars(x, set));
+    return set;
+  }
+
+  const ASSIGN = /^([A-Za-zА-Яа-яЁёΑ-Ωα-ω_][A-Za-zА-Яа-яЁёΑ-Ωα-ω_0-9']*)\s*=\s*(.*)$/;
+  const RESERVED = new Set(['π', 'pi', 'e', 'Ans', 'ans']);
+  function splitAssign(line) {
+    const m = line.match(ASSIGN);
+    if (m && !FN[m[1]] && !RESERVED.has(m[1])) return { name: m[1], expr: m[2].split('=')[0] };
+    if (line.includes('=')) { const p = line.split('=').map((s) => s.trim()); return { name: null, expr: p[0] || p[1] || '' }; }
+    return { name: null, expr: line };
+  }
+  function evalExpr(str, env) {
+    const e = env || Object.create(null);
+    const v = ev(parse(str, new Set(Object.keys(e))), e);
+    if (Number.isNaN(v)) err('Результат не определён');
+    return v;
+  }
+  function evalLines(text, ans) {
+    const env = Object.create(null);
+    if (typeof ans === 'number' && isFinite(ans)) env.Ans = ans;
+    const lines = []; let last = null;
+    String(text).split('\n').forEach((raw, idx) => {
+      const line = raw.replace(/(#|\/\/).*$/, '').trim();
+      if (!line) { lines.push({ idx, kind: 'empty', src: raw }); return; }
+      const { name, expr } = splitAssign(line);
+      try {
+        if (!expr.trim()) err(name ? `После «${name} =» нет выражения` : 'Пусто');
+        const v = evalExpr(expr, env);
+        if (name) env[name] = v;
+        last = v;
+        lines.push({ idx, kind: name ? 'assign' : 'value', name, value: v, src: raw });
+      } catch (e) {
+        lines.push({ idx, kind: 'error', msg: e instanceof CalcError ? e.message : 'Ошибка: ' + e.message, src: raw });
+      }
+    });
+    return { lines, last, env };
+  }
+
+  /* ---------- формат чисел ---------- */
+  const SUPOUT = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', '-': '⁻' };
+  const supStr = (n) => [...String(n)].map((c) => SUPOUT[c] || c).join('');
+  function fmt(x, sig = 10, dec = ',') {
+    if (typeof x !== 'number' || Number.isNaN(x)) return '—';
+    if (!isFinite(x)) return x > 0 ? '∞' : '−∞';
+    if (x === 0) return '0';
+    const ax = Math.abs(x);
+    let s;
+    if (ax >= 1e12 || ax < 1e-5) {
+      let [m, e] = x.toExponential(sig - 1).split('e');
+      if (m.includes('.')) m = m.replace(/0+$/, '').replace(/\.$/, '');
+      s = m + '·10' + supStr(+e);
+    } else s = String(+x.toPrecision(sig));
+    return dec === ',' ? s.replace('.', ',') : s;
+  }
+  function fmtIns(x, dec = ',') { // для вставки обратно в выражение
+    let s = String(+x.toPrecision(12));
+    if (dec === ',') s = s.replace('.', ',');
+    return x < 0 ? '(' + s + ')' : s;
+  }
+
+  /* ---------- погрешности ---------- */
+  function roundAt(v, dec) {
+    if (v === 0 || !isFinite(v)) return v;
+    const sg = Math.sign(v);
+    const [m, e] = Math.abs(v).toExponential(14).split('e');
+    const r = Math.round(Number(m + 'e' + (Number(e) + dec)));
+    return sg * Number(r + 'e' + -dec);
+  }
+  // Правило: в погрешности 2 значащие цифры, если первая 1 или 2, иначе 1; результат — до того же разряда.
+  function roundPair(x, d) {
+    if (!(d > 0) || !isFinite(d) || !isFinite(x)) return null;
+    const ex = Math.floor(Math.log10(d));
+    const lead = Math.floor(d / Math.pow(10, ex) + 1e-9);
+    const keep = lead <= 2 ? 2 : 1;
+    const dec = keep - 1 - ex;
+    const dr = roundAt(d, dec), xr = roundAt(x, dec);
+    const mag = Math.floor(Math.log10(Math.max(Math.abs(x), d)));
+    const p = mag >= 5 || mag <= -4 ? mag : 0;
+    const D = Math.max(dec + p, 0);
+    const sc = (v) => (p ? v / Math.pow(10, p) : v);
+    return { x: xr, d: dr, xs: sc(xr).toFixed(D), ds: sc(dr).toFixed(D), p, dec };
+  }
+  const DF = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30, 40, 60, 120, Infinity];
+  const TT = {
+    0.9: [6.314, 2.920, 2.353, 2.132, 2.015, 1.943, 1.895, 1.860, 1.833, 1.812, 1.796, 1.782, 1.771, 1.761, 1.753, 1.746, 1.740, 1.734, 1.729, 1.725, 1.708, 1.697, 1.684, 1.671, 1.658, 1.645],
+    0.95: [12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262, 2.228, 2.201, 2.179, 2.160, 2.145, 2.131, 2.120, 2.110, 2.101, 2.093, 2.086, 2.060, 2.042, 2.021, 2.000, 1.980, 1.960],
+    0.99: [63.657, 9.925, 5.841, 4.604, 4.032, 3.707, 3.499, 3.355, 3.250, 3.169, 3.106, 3.055, 3.012, 2.977, 2.947, 2.921, 2.898, 2.878, 2.861, 2.845, 2.787, 2.750, 2.704, 2.660, 2.617, 2.576],
+  };
+  function student(P, df) {
+    const tab = TT[P] || TT[0.95];
+    if (df < 1) return NaN;
+    if (df <= 20) return tab[Math.round(df) - 1];
+    for (let k = 20; k < DF.length; k++) {
+      if (df <= DF[k]) {
+        const d0 = DF[k - 1], d1 = DF[k];
+        const u = (1 / d0 - 1 / df) / (1 / d0 - 1 / d1);
+        return tab[k - 1] + (tab[k] - tab[k - 1]) * u;
+      }
+    }
+    return tab[tab.length - 1];
+  }
+  function stats(vals, P, dI) {
+    const n = vals.length;
+    need(n >= 1, 'Нет ни одного числа');
+    const mean = vals.reduce((a, b) => a + b, 0) / n;
+    const dev = vals.map((v) => v - mean);
+    const ss = dev.reduce((a, b) => a + b * b, 0);
+    const S2 = n > 1 ? Math.sqrt(ss / (n - 1)) : 0;
+    const Sm = n > 1 ? S2 / Math.sqrt(n) : 0;
+    const t = n > 1 ? student(P, n - 1) : NaN;
+    const dR = n > 1 ? t * Sm : 0;
+    const di = dI > 0 ? dI : 0;
+    const d = Math.sqrt(dR * dR + di * di);
+    return { n, mean, dev, ss, S: S2, Sm, t, dR, dI: di, d, eps: mean !== 0 ? (d / Math.abs(mean)) * 100 : NaN, r: roundPair(mean, d) };
+  }
+  function linfit(pts, origin, P) {
+    const n = pts.length;
+    need(n >= (origin ? 2 : 3), origin ? 'Нужно минимум 2 точки' : 'Нужно минимум 3 точки');
+    let sx = 0, sy = 0, sxx = 0, sxy = 0;
+    for (const [x, y] of pts) { sx += x; sy += y; sxx += x * x; sxy += x * y; }
+    let k, b, Sk, Sb, df, res = 0;
+    if (origin) {
+      need(sxx > 0, 'Все x равны нулю');
+      k = sxy / sxx; b = 0;
+      for (const [x, y] of pts) res += (y - k * x) ** 2;
+      df = n - 1; Sk = Math.sqrt(res / (df * sxx)); Sb = 0;
+    } else {
+      const D = n * sxx - sx * sx;
+      need(Math.abs(D) > 1e-300, 'Все x одинаковые — прямую не провести');
+      k = (n * sxy - sx * sy) / D; b = (sy - k * sx) / n;
+      for (const [x, y] of pts) res += (y - k * x - b) ** 2;
+      df = n - 2; const s2 = res / df;
+      Sk = Math.sqrt((s2 * n) / D); Sb = Math.sqrt((s2 * sxx) / D);
+    }
+    const my = sy / n; let sst = 0;
+    for (const [, y] of pts) sst += (y - my) ** 2;
+    const R2 = sst > 0 ? 1 - res / sst : 1;
+    const t = student(P, df);
+    return { n, k, b, Sk, Sb, t, df, dk: t * Sk, db: t * Sb, R2, rk: roundPair(k, t * Sk), rb: origin ? null : roundPair(b, t * Sb) };
+  }
+  function indirect(ast, rows) {
+    const env = Object.create(null);
+    rows.forEach((r) => { env[r.name] = r.v; });
+    const f0 = ev(ast, env);
+    need(isFinite(f0), 'При этих значениях формула не считается');
+    const parts = rows.map((r) => {
+      if (!(r.d > 0)) return { ...r, der: null, c: 0 };
+      const h = r.v !== 0 ? Math.abs(r.v) * 1e-6 : 1e-7;
+      const f = (x) => { env[r.name] = x; try { return ev(ast, env); } finally { env[r.name] = r.v; } };
+      let der;
+      try { der = (f(r.v + h) - f(r.v - h)) / (2 * h); } catch (e) { der = (f(r.v + h) - f0) / h; }
+      return { ...r, der, c: der * r.d };
+    });
+    const d = Math.sqrt(parts.reduce((s, p) => s + p.c * p.c, 0));
+    return { f: f0, parts, d, eps: f0 !== 0 ? (d / Math.abs(f0)) * 100 : NaN, r: roundPair(f0, d) };
+  }
+
+  return {
+    setMode: (m) => { S.mode = m === 'rad' ? 'rad' : 'deg'; }, getMode: () => S.mode,
+    FN, CalcError, normalize, parse, ev, evalExpr, evalLines, collectVars, splitAssign,
+    fmt, fmtIns, supStr, roundAt, roundPair, student, stats, linfit, indirect,
+  };
+})();
+
+
+</script>
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('lk_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('lk_' + k, JSON.stringify(v)); } catch (e) { /* хранилище недоступно */ } },
+};
+const ST = Object.assign({ mode: 'deg', sig: 10, dec: ',', theme: 'auto', tab: 'calc', lab: 'st', life: 'mix', constVar: false }, store.get('settings', {}));
+const save = () => store.set('settings', ST);
+const F = (x, sig) => Calc.fmt(x, sig || ST.sig, ST.dec);
+const F4 = (x) => Calc.fmt(x, 4, ST.dec);
+const F6 = (x) => Calc.fmt(x, 6, ST.dec);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const loc = (s) => (ST.dec === ',' ? String(s).replace('.', ',') : String(s));
+
+/* ---------- уведомления ---------- */
+let toastEl = null, toastT = 0;
+function toast(msg, actionLabel, action) {
+  if (toastEl) toastEl.remove();
+  toastEl = document.createElement('div');
+  toastEl.className = 'toast'; toastEl.setAttribute('role', 'status');
+  toastEl.innerHTML = `<span>${esc(msg)}</span>`;
+  if (actionLabel) {
+    const b = document.createElement('button'); b.textContent = actionLabel;
+    b.onclick = () => { action(); toastEl.remove(); toastEl = null; };
+    toastEl.appendChild(b);
+  }
+  document.body.appendChild(toastEl);
+  clearTimeout(toastT);
+  toastT = setTimeout(() => { if (toastEl) { toastEl.remove(); toastEl = null; } }, actionLabel ? 5000 : 2200);
+}
+async function copy(text, label) {
+  try { await navigator.clipboard.writeText(text); toast(label || 'Скопировано'); }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast(label || 'Скопировано'); } catch (_) { toast('Не удалось скопировать'); }
+    ta.remove();
+  }
+}
+
+/* ---------- тема, режим углов, вкладки ---------- */
+function applyTheme() {
+  if (ST.theme === 'auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = ST.theme;
+}
+const modeHooks = [];
+function setMode(m) {
+  ST.mode = m; Calc.setMode(m); document.body.dataset.mode = m; save();
+  $$('.angle button').forEach((b) => { const on = b.dataset.mode === m; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+  $('#badge').textContent = m === 'deg' ? 'DEG °' : 'RAD';
+  const tc = $('meta[name=theme-color]'); if (tc) tc.content = getComputedStyle(document.body).getPropertyValue('--bg').trim() || '#1d242c';
+  modeHooks.forEach((f) => f());
+}
+$$('.angle button').forEach((b) => b.addEventListener('click', () => { setMode(b.dataset.mode); toast(b.dataset.mode === 'deg' ? 'Углы в градусах' : 'Углы в радианах'); }));
+
+function showTab(t) {
+  ST.tab = t; save();
+  $$('.tab').forEach((s) => { s.hidden = s.id !== 'tab-' + t; });
+  $$('.tabbar button').forEach((b) => b.classList.toggle('on', b.dataset.tab === t));
+  if (t === 'lab' && ST.lab === 'mnk') setTimeout(drawPlot, 30);
+}
+$$('.tabbar button').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+function selectPane(group, p) {
+  const seg = $(`.seg[data-seg=${group}]`);
+  $$('button', seg).forEach((b) => b.classList.toggle('on', b.dataset.p === p));
+  $$('[data-pane]', seg.parentElement).forEach((x) => { x.hidden = x.dataset.pane !== p; });
+  ST[group] = p; save();
+  if (p === 'mnk') setTimeout(drawPlot, 30);
+}
+$$('.seg').forEach((seg) => $$('button', seg).forEach((b) => b.addEventListener('click', () => selectPane(seg.dataset.seg, b.dataset.p))));
+
+/* ---------- шторки ---------- */
+function openSheet(el) { closeSheets(); $('#sheetBg').hidden = false; el.hidden = false; }
+function closeSheets() { $('#sheetBg').hidden = true; $$('.sheet').forEach((s) => { s.hidden = true; }); }
+$('#sheetBg').addEventListener('click', closeSheets);
+$$('.sheet-x').forEach((b) => b.addEventListener('click', closeSheets));
+function sheet(title, html) { $('#sheetTitle').textContent = title; $('#sheetBody').innerHTML = html; openSheet($('#sheet')); return $('#sheetBody'); }
+
+/* ---------- значения полей (в полях тоже можно писать выражения) ---------- */
+function val(id) {
+  const el = typeof id === 'string' ? $('#' + id) : id;
+  const s = el.value.trim();
+  el.classList.remove('bad');
+  if (!s) return null;
+  try { return Calc.evalExpr(s); } catch (e) { el.classList.add('bad'); return NaN; }
+}
+const ok = (...v) => v.every((x) => typeof x === 'number' && isFinite(x));
+const kv = (pairs) => pairs.map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
+
+/* ================= КАЛЬКУЛЯТОР ================= */
+const ed = $('#ed');
+let ANS = store.get('ans', null);
+let lastRes = null;
+ed.value = store.get('editor', '');
+const caretEnd = () => { const L = ed.value.length; ed.setSelectionRange(L, L); };
+caretEnd();
+
+function caretLine() { return ed.value.slice(0, ed.selectionStart).split('\n').length - 1; }
+function preview() {
+  lastRes = Calc.evalLines(ed.value, ANS);
+  const items = lastRes.lines.filter((l) => l.kind !== 'empty');
+  const rows = $('#rows');
+  const showRows = items.length > 1;
+  const literal = (l) => l.kind === 'assign' && /^[^=]*=\s*-?[\d.,]+(e-?\d+)?\s*$/i.test(l.src.replace(/(#|\/\/).*$/, '').trim());
+  rows.innerHTML = !showRows ? '' : items.filter((l) => !literal(l)).map((l) => {
+    const src = esc(l.src.replace(/(#|\/\/).*$/, '').trim());
+    if (l.kind === 'error') return `<div class="row err"><span class="ln">${l.idx + 1}</span><span class="src">${src}</span><span class="val">${esc(l.msg)}</span></div>`;
+    return `<div class="row" data-v="${l.value}"><span class="ln">${l.idx + 1}</span><span class="src">${src}</span><span class="val">${l.name ? esc(l.name) + ' = ' : '= '}${esc(F(l.value))}</span></div>`;
+  }).join('');
+  const out = $('#out');
+  const cl = caretLine();
+  const cur = items.find((l) => l.idx === cl) || items[items.length - 1];
+  out.classList.remove('err');
+  if (!cur) out.textContent = '0';
+  else if (cur.kind === 'error') { out.textContent = cur.msg; out.classList.add('err'); }
+  else out.textContent = (cur.name ? cur.name + ' = ' : '') + F(cur.value);
+  out.dataset.v = cur && cur.kind !== 'error' ? cur.value : '';
+}
+let pvT = 0;
+modeHooks.push(() => preview());
+function changed() { store.set('editor', ed.value); clearTimeout(pvT); pvT = setTimeout(preview, 90); }
+ed.addEventListener('input', changed);
+ed.addEventListener('click', () => setTimeout(preview, 0));
+ed.addEventListener('keyup', (e) => { if (e.key.startsWith('Arrow')) preview(); });
+ed.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); compute(); } });
+$('#rows').addEventListener('click', (e) => {
+  const r = e.target.closest('.row[data-v]'); if (!r) return;
+  insert(Calc.fmtIns(+r.dataset.v, ST.dec)); toast('Число вставлено');
+});
+$('#copyOut').addEventListener('click', () => {
+  const v = $('#out').dataset.v;
+  if (v === '' || v === undefined) return toast('Нечего копировать');
+  copy(String(+(+v).toPrecision(12)).replace('.', ST.dec), 'Результат скопирован');
+});
+
+function insert(txt, back = 0) {
+  const s = ed.selectionStart, e = ed.selectionEnd;
+  ed.setRangeText(txt, s, e, 'end');
+  if (back) { const p = ed.selectionStart - back; ed.setSelectionRange(p, p); }
+  changed(); keepFocus();
+}
+function keepFocus() { if (ed.inputMode === 'none' || document.activeElement === ed) ed.focus({ preventScroll: true }); }
+const FN_TOKENS = Object.keys(Calc.FN).sort((a, b) => b.length - a.length);
+function backspace() {
+  let s = ed.selectionStart; const e = ed.selectionEnd;
+  if (s !== e) { ed.setRangeText('', s, e, 'end'); changed(); return; }
+  if (s === 0) return;
+  const before = ed.value.slice(0, s);
+  let n = 1;
+  const m = before.match(/([A-Za-z]+)\($/);
+  if (m && FN_TOKENS.includes(m[1])) n = m[0].length; // стираем «arcsin(» целиком
+  else if (before.endsWith('·10^(')) n = 5;
+  else if (before.endsWith('Ans')) n = 3;
+  ed.setRangeText('', s - n, s, 'end'); changed();
+}
+function moveCaret(d) {
+  const p = Math.max(0, Math.min(ed.value.length, ed.selectionStart + d));
+  ed.setSelectionRange(p, p); keepFocus(); preview();
+}
+let cleared = null;
+function clearAll() {
+  if (!ed.value) return;
+  cleared = ed.value; ed.value = ''; changed();
+  toast('Очищено', 'Вернуть', () => { ed.value = cleared; caretEnd(); changed(); });
+}
+
+function compute() {
+  preview();
+  const r = lastRes;
+  const good = r.lines.filter((l) => l.kind === 'value' || l.kind === 'assign');
+  if (!good.length) {
+    const e = r.lines.find((l) => l.kind === 'error');
+    toast(e ? e.msg : 'Сначала введи выражение'); return;
+  }
+  ANS = r.last; store.set('ans', ANS);
+  const h = store.get('hist', []);
+  if (!h.length || h[0].t !== ed.value) {
+    h.unshift({ t: ed.value, v: r.last, m: ST.mode, at: Date.now() });
+    store.set('hist', h.slice(0, 60));
+  }
+  const out = $('#out'); out.classList.remove('flash'); void out.offsetWidth; out.classList.add('flash');
+  preview();
+}
+
+/* клавиши */
+const KEYS = [
+  [['sin', 'sin(', 'f trig'], ['cos', 'cos(', 'f trig'], ['tg', 'tg(', 'f trig'], ['ctg', 'ctg(', 'f trig'], ['√', '√(', 'f']],
+  [['arcsin', 'arcsin(', 'f trig arc'], ['arccos', 'arccos(', 'f trig arc'], ['arctg', 'arctg(', 'f trig arc'], ['arcctg', 'arcctg(', 'f trig arc'], ['x²', '²', 'f']],
+  [['ln', 'ln(', 'f'], ['lg', 'lg(', 'f'], ['xʸ', '^', 'f'], ['(', '(', 'f'], [')', ')', 'f']],
+  [['π', 'π', 'f'], ['e', 'e', 'f'], ['°', '°', 'f'], ['Ans', 'Ans', 'f'], ['=', ' = ', 'f']],
+  [['7', '7', 'num'], ['8', '8', 'num'], ['9', '9', 'num'], ['⌫', '@bs', 'ctl'], ['AC', '@ac', 'ctl']],
+  [['4', '4', 'num'], ['5', '5', 'num'], ['6', '6', 'num'], ['×', '·', 'op'], ['÷', '/', 'op']],
+  [['1', '1', 'num'], ['2', '2', 'num'], ['3', '3', 'num'], ['+', '+', 'op'], ['−', '-', 'op']],
+  [['0', '0', 'num'], [',', ',', 'num'], ['×10ˣ', '·10^(', 'ctl'], ['◀', '@l', 'ctl'], ['▶', '@r', 'ctl']],
+  [['↵', '@nl', 'ctl'], ['Посчитать', '@go', 'go']],
+];
+const kp = $('#keypad');
+KEYS.flat().forEach(([label, ins, cls]) => {
+  const b = document.createElement('button');
+  b.className = 'k ' + cls; b.type = 'button'; b.textContent = label; b.dataset.ins = ins;
+  if (ins === '@nl') b.setAttribute('aria-label', 'Новая строка');
+  if (ins === '@bs') b.setAttribute('aria-label', 'Стереть');
+  kp.appendChild(b);
+});
+let holdT = 0, holdI = 0;
+kp.addEventListener('pointerdown', (e) => {
+  const b = e.target.closest('.k'); if (!b) return;
+  e.preventDefault(); // не снимаем фокус с поля
+  if (b.dataset.ins === '@bs') {
+    holdT = setTimeout(() => { holdI = setInterval(backspace, 70); }, 400);
+  }
+});
+const stopHold = () => { clearTimeout(holdT); clearInterval(holdI); };
+kp.addEventListener('pointerup', stopHold); kp.addEventListener('pointerleave', stopHold); kp.addEventListener('pointercancel', stopHold);
+kp.addEventListener('click', (e) => {
+  const b = e.target.closest('.k'); if (!b) return;
+  const ins = b.dataset.ins;
+  if (navigator.vibrate) try { navigator.vibrate(6); } catch (_) {}
+  switch (ins) {
+    case '@bs': backspace(); keepFocus(); break;
+    case '@ac': clearAll(); break;
+    case '@l': moveCaret(-1); break;
+    case '@r': moveCaret(1); break;
+    case '@nl': insert('\n'); break;
+    case '@go': compute(); break;
+    default: insert(ins);
+  }
+});
+
+/* панель инструментов */
+$('.toolbar').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  const a = b.dataset.act;
+  if (a === 'kbd') toggleKbd();
+  if (a === 'fx') openFx();
+  if (a === 'const') openConst();
+  if (a === 'hist') openHist();
+  if (a === 'ocr') openSheet($('#ocrSheet'));
+});
+function toggleKbd() {
+  const on = ed.inputMode === 'none';
+  ed.inputMode = on ? 'text' : 'none';
+  $('#kbdBtn').classList.toggle('on', on);
+  ed.blur(); setTimeout(() => ed.focus(), 30);
+}
+
+const FX = [
+  ['sh', 'sh(', 'гиперб. синус'], ['ch', 'ch(', 'гиперб. косинус'], ['th', 'th(', 'гиперб. тангенс'],
+  ['cth', 'cth(', 'гиперб. котангенс'], ['arsh', 'arsh(', 'обратный sh'], ['arch', 'arch(', 'обратный ch'],
+  ['arth', 'arth(', 'обратный th'], ['∛x', '∛(', 'кубический корень'], ['ⁿ√x', 'root(', 'root(x; n)'],
+  ['log', 'log(', 'log(осн.; x)'], ['log₂', 'log2(', 'логарифм по 2'], ['eˣ', 'exp(', 'экспонента'],
+  ['10ˣ', '10^(', 'десять в степени'], ['1/x', '^(-1)', 'обратное число'], ['|x|', 'abs(', 'модуль'],
+  ['n!', '!', 'факториал'], ['%', '%', 'делит на 100'], [';', '; ', 'разделитель аргументов'],
+  ['atan2', 'atan2(', 'atan2(y; x), угол точки'], ['hyp', 'hyp(', 'hyp(a; b) = √(a²+b²)'], ['round', 'round(', 'round(x; знаков)'],
+  ['min', 'min(', 'min(a; b; …)'], ['max', 'max(', 'max(a; b; …)'], ['mean', 'mean(', 'среднее (a; b; …)'],
+  ['deg', 'deg(', 'радианы → градусы'], ['rad', 'rad(', 'градусы → радианы'], ['mod', 'mod(', 'остаток mod(a; b)'],
+  ['floor', 'floor(', 'вниз до целого'], ['ceil', 'ceil(', 'вверх до целого'], ['#', '  # ', 'комментарий'],
+];
+function openFx() {
+  const body = sheet('Ещё функции', `<div class="fgrid">${FX.map(([l, ins, d]) => `<button data-ins="${esc(ins)}"><b>${l}</b><small>${d}</small></button>`).join('')}</div>`);
+  body.onclick = (e) => { const b = e.target.closest('button[data-ins]'); if (!b) return; closeSheets(); insert(b.dataset.ins); };
+}
+const CONSTS = [
+  ['g', '9.80665', 'м/с²', 'ускорение свободного падения'], ['c', '299792458', 'м/с', 'скорость света'],
+  ['G', '6.6743e-11', 'Н·м²/кг²', 'гравитационная постоянная'], ['h', '6.62607015e-34', 'Дж·с', 'постоянная Планка'],
+  ['ħ', '1.054571817e-34', 'Дж·с', 'приведённая Планка'], ['qe', '1.602176634e-19', 'Кл', 'элементарный заряд'],
+  ['me', '9.1093837015e-31', 'кг', 'масса электрона'], ['mp', '1.67262192369e-27', 'кг', 'масса протона'],
+  ['NA', '6.02214076e23', '1/моль', 'число Авогадро'], ['kB', '1.380649e-23', 'Дж/К', 'постоянная Больцмана'],
+  ['R', '8.314462618', 'Дж/(моль·К)', 'газовая постоянная'], ['ε0', '8.8541878128e-12', 'Ф/м', 'электрическая постоянная'],
+  ['μ0', '1.25663706212e-6', 'Гн/м', 'магнитная постоянная'], ['k', '8.9875517923e9', 'Н·м²/Кл²', '1/(4πε₀)'],
+  ['σ', '5.670374419e-8', 'Вт/(м²·К⁴)', 'Стефана–Больцмана'], ['u', '1.66053906660e-27', 'кг', 'атомная единица массы'],
+  ['p0', '101325', 'Па', 'нормальное давление'], ['T0', '273.15', 'К', '0 °C в кельвинах'],
+];
+function openConst() {
+  const body = sheet('Константы', `
+    <label class="chk"><input type="checkbox" id="cvMode" ${ST.constVar ? 'checked' : ''}> Вставлять строкой «имя = значение»</label>
+    <div class="ulist">${CONSTS.map(([n, v, u, d], i) => `<button data-i="${i}"><span><b class="m">${n}</b> — ${d}</span><span>${esc(loc(v))} ${u}</span></button>`).join('')}</div>`);
+  $('#cvMode').onchange = (e) => { ST.constVar = e.target.checked; save(); };
+  body.onclick = (e) => {
+    const b = e.target.closest('button[data-i]'); if (!b) return;
+    const [n, v] = CONSTS[+b.dataset.i]; const vv = loc(v);
+    closeSheets();
+    if (ST.constVar) {
+      const s = ed.selectionStart; const lineStart = ed.value.lastIndexOf('\n', s - 1) + 1;
+      ed.setSelectionRange(lineStart, lineStart); insert(`${n} = ${vv}\n`);
+    } else insert(/e/.test(v) ? `(${vv})` : vv);
+  };
+}
+function openHist() {
+  const h = store.get('hist', []);
+  const body = sheet('История', h.length ? `<div class="hist">${h.map((x, i) => `<button data-i="${i}"><div class="hx">${esc(x.t)}</div><div class="hv">= ${esc(F(x.v))} <small style="color:var(--faint);font-weight:400">${x.m === 'rad' ? 'RAD' : 'DEG'} · ${new Date(x.at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</small></div></button>`).join('')}</div><div class="btnrow" style="margin-top:12px"><button class="btn sm" id="hClr">Очистить историю</button></div>`
+    : '<p class="note">Здесь появятся расчёты после нажатия «Посчитать». Нажми на запись — она вернётся в редактор.</p>');
+  body.onclick = (e) => {
+    if (e.target.id === 'hClr') { store.set('hist', []); closeSheets(); toast('История очищена'); return; }
+    const b = e.target.closest('button[data-i]'); if (!b) return;
+    const x = h[+b.dataset.i]; closeSheets();
+    ed.value = x.t; caretEnd(); changed();
+    if (x.m !== ST.mode) toast(`Запись считалась в ${x.m === 'rad' ? 'радианах' : 'градусах'}, сейчас — в ${ST.mode === 'rad' ? 'радианах' : 'градусах'}`);
+  };
+}
+
+/* ================= РАСПОЗНАВАНИЕ ================= */
+const OCR = { worker: null, loading: null, kind: '' };
+const CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+const WL = '0123456789.,+-*/=()^:xX '; // пробел обязателен, иначе числа в строке склеиваются
+function ocrStatus(msg, cls) { const s = $('#ocrStatus'); s.textContent = msg; s.className = 'status ' + (cls || ''); }
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = src; s.async = true;
+    s.onload = res; s.onerror = () => { s.remove(); rej(new Error('script ' + src)); };
+    document.head.appendChild(s);
+  });
+}
+function watchdog(factory, idleMs) {
+  return new Promise((res, rej) => {
+    let t = 0;
+    const kick = () => { clearTimeout(t); t = setTimeout(() => rej(new Error('timeout')), idleMs); };
+    kick();
+    factory(kick).then((w) => { clearTimeout(t); res(w); }, (e) => { clearTimeout(t); rej(e); });
+  });
+}
+const prog = (m) => {
+  const p = $('#ocrProg');
+  if (m && typeof m.progress === 'number') { p.hidden = false; p.value = m.progress; }
+  if (m && m.status) {
+    const map = { 'loading tesseract core': 'Загружаю движок…', 'initializing tesseract': 'Запускаю движок…', 'loading language traineddata': 'Загружаю словарь цифр…', 'initializing api': 'Готовлю распознавание…', 'recognizing text': 'Распознаю…' };
+    ocrStatus(map[m.status] || m.status);
+  }
+};
+async function getWorker() {
+  if (OCR.worker) return OCR.worker;
+  if (OCR.loading) return OCR.loading;
+  OCR.loading = (async () => {
+    if (location.protocol !== 'file:') {
+      try {
+        const base = new URL('tesseract/', location.href).href;
+        if (!window.Tesseract) await loadScript(base + 'tesseract.min.js');
+        const w = await watchdog((kick) => Tesseract.createWorker('eng', 1, {
+          workerPath: base + 'worker.min.js', corePath: base + 'core', langPath: base + 'lang',
+          workerBlobURL: false, gzip: true, logger: (m) => { kick(); prog(m); }, errorHandler: () => {},
+        }), 30000);
+        OCR.kind = 'локальный движок, без интернета'; return (OCR.worker = w);
+      } catch (e) { console.warn('local OCR', e); }
+    }
+    if (navigator.onLine !== false) {
+      try {
+        if (!window.Tesseract) await loadScript(CDN);
+        const w = await watchdog((kick) => Tesseract.createWorker('eng', 1, { logger: (m) => { kick(); prog(m); }, errorHandler: () => {} }), 45000);
+        OCR.kind = 'движок из интернета'; return (OCR.worker = w);
+      } catch (e) { console.warn('cdn OCR', e); }
+    }
+    return null;
+  })();
+  const w = await OCR.loading;
+  if (!w) OCR.loading = null;
+  return w;
+}
+function loadImage(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file); const img = new Image();
+    img.onload = () => { res(img); setTimeout(() => URL.revokeObjectURL(url), 1000); };
+    img.onerror = () => rej(new Error('Не удалось открыть картинку'));
+    img.src = url;
+  });
+}
+function preprocess(img, bin) {
+  const w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height;
+  const long = Math.max(w0, h0);
+  const sc = long > 2400 ? 2400 / long : long < 1400 ? Math.min(3, 1400 / long) : 1;
+  const c = document.createElement('canvas');
+  c.width = Math.round(w0 * sc); c.height = Math.round(h0 * sc);
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.imageSmoothingQuality = 'high';
+  x.drawImage(img, 0, 0, c.width, c.height);
+  const d = x.getImageData(0, 0, c.width, c.height), p = d.data, N = p.length / 4;
+  const g = new Uint8ClampedArray(N), hist = new Uint32Array(256);
+  for (let i = 0; i < N; i++) { const v = (p[4 * i] * 299 + p[4 * i + 1] * 587 + p[4 * i + 2] * 114) / 1000; g[i] = v; hist[g[i]]++; }
+  let lo = 0, hi = 255, acc = 0;
+  for (let i = 0; i < 256; i++) { acc += hist[i]; if (acc > N * 0.01) { lo = i; break; } }
+  acc = 0;
+  for (let i = 255; i >= 0; i--) { acc += hist[i]; if (acc > N * 0.01) { hi = i; break; } }
+  let thr = -1;
+  if (bin) { // порог Оцу
+    let sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
+    let sB = 0, wB = 0, best = 0;
+    for (let i = 0; i < 256; i++) {
+      wB += hist[i]; if (!wB) continue; const wF = N - wB; if (!wF) break;
+      sB += i * hist[i]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) ** 2;
+      if (v > best) { best = v; thr = i; }
+    }
+  }
+  const span = Math.max(1, hi - lo);
+  for (let i = 0; i < N; i++) {
+    let v = g[i];
+    v = thr >= 0 ? (v > thr ? 255 : 0) : ((v - lo) * 255) / span;
+    p[4 * i] = p[4 * i + 1] = p[4 * i + 2] = v; p[4 * i + 3] = 255;
+  }
+  x.putImageData(d, 0, 0);
+  return c;
+}
+function showPreview(c) {
+  const pv = $('#ocrPrev');
+  const k = Math.min(1, 900 / c.width);
+  pv.width = Math.round(c.width * k); pv.height = Math.round(c.height * k);
+  pv.getContext('2d').drawImage(c, 0, 0, pv.width, pv.height); pv.hidden = false;
+}
+async function nativeDetect(c) {
+  if (!('TextDetector' in window)) return null;
+  try {
+    const blocks = await new window.TextDetector().detect(c);
+    if (!blocks || !blocks.length) return null;
+    blocks.sort((a, b) => a.boundingBox.y - b.boundingBox.y || a.boundingBox.x - b.boundingBox.x);
+    let out = '', lastY = null, lastH = 0;
+    for (const b of blocks) {
+      const y = b.boundingBox.y;
+      if (lastY !== null) out += Math.abs(y - lastY) > lastH * 0.6 ? '\n' : ' ';
+      out += b.rawValue; lastY = y; lastH = b.boundingBox.height;
+    }
+    return out;
+  } catch (e) { return null; }
+}
+$('#ocrFile').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0]; e.target.value = '';
+  if (!file) return;
+  const pb = $('#ocrProg'); pb.hidden = true; pb.value = 0;
+  try {
+    ocrStatus('Готовлю изображение…');
+    const img = await loadImage(file);
+    const c = preprocess(img, $('#ocrBin').checked);
+    showPreview(c);
+    let text = await nativeDetect(c), kind = 'встроенный распознаватель браузера';
+    if (text === null) {
+      ocrStatus('Запускаю распознавание…');
+      const w = await getWorker();
+      if (!w) {
+        ocrStatus('Распознавание недоступно здесь. Открой приложение по ссылке (см. «Справка → Установка») или используй запасной путь ниже — текст из галереи + «Вставить из буфера».', 'bad');
+        $('details', $('#ocrSheet')).open = true; return;
+      }
+      await w.setParameters({
+        tessedit_char_whitelist: $('#ocrDigits').checked ? WL : '',
+        tessedit_pageseg_mode: $('#ocrPsm').value, preserve_interword_spaces: '1',
+      });
+      const r = await w.recognize(c);
+      text = r.data.text; kind = OCR.kind;
+    }
+    pb.hidden = true;
+    const cleaned = cleanOcr(text);
+    $('#ocrText').value = cleaned;
+    ocrStatus(cleaned ? `Готово (${kind}). Проверь цифры и нажми «Посчитать».` : 'Текст не найден. Обрежь фото до нужного места и сними ровнее.', cleaned ? 'ok' : 'bad');
+  } catch (err) {
+    pb.hidden = true; ocrStatus('Ошибка: ' + err.message, 'bad');
+  }
+});
+$('#ocrPaste').addEventListener('click', async () => {
+  try { const t = await navigator.clipboard.readText(); $('#ocrText').value = cleanOcr(t); ocrStatus('Вставлено из буфера. Проверь и нажми «Посчитать».', 'ok'); }
+  catch (e) { ocrStatus('Браузер не дал прочитать буфер — нажми в поле ниже и вставь вручную (долгое нажатие → Вставить).', 'bad'); $('#ocrText').focus(); }
+});
+function cleanOcr(t) {
+  let s = String(t || '').replace(/\r/g, '').replace(/[“”"'`´]/g, '');
+  for (let k = 0; k < 2; k++) {
+    s = s.replace(/(\d)\s*[xXхХ×✕*]\s*(?=\d)/g, (m, a) => a + '·');
+    s = s.replace(/(\d)[OoОо](?=[\d.,\s]|$)/gm, (m, a) => a + '0');
+    s = s.replace(/(^|[\s(=+\-·/])[OoОо](?=[.,]\d)/gm, (m, a) => a + '0');
+    s = s.replace(/(\d)[lI|](?=\d)/g, (m, a) => a + '1');
+  }
+  return s.replace(/[—–−]/g, '-').replace(/÷/g, '/').replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{2,}/g, '\n').trim();
+}
+const NUM_RE = /-?\d+(?:[.,]\d+)?(?:[eE][-+]?\d+)?/g;
+const nums = (s) => (Calc.normalize(s).replace(/−/g, '-').match(NUM_RE) || []).map((x) => parseFloat(x.replace(',', '.')));
+$('#ocrClean').addEventListener('click', () => { $('#ocrText').value = cleanOcr($('#ocrText').value); });
+$('#ocrGo').addEventListener('click', () => {
+  const t = $('#ocrText').value.trim(); if (!t) return toast('Поле пустое');
+  closeSheets(); showTab('calc');
+  ed.value = ed.value.trim() ? ed.value.replace(/\s*$/, '\n') + t : t;
+  caretEnd(); changed(); compute();
+});
+$('#ocrToSt').addEventListener('click', () => {
+  const v = Calc.normalize($('#ocrText').value).match(NUM_RE) || []; if (!v.length) return toast('Чисел не нашёл');
+  $('#stIn').value = v.join(' '); closeSheets(); showTab('lab'); selectPane('lab', 'st'); runStats();
+});
+$('#ocrToMnk').addEventListener('click', () => {
+  const lines = $('#ocrText').value.split('\n').map(nums).filter((a) => a.length >= 2);
+  if (!lines.length) return toast('Нужны строки с двумя числами: x и y');
+  $('#mkIn').value = lines.map((a) => loc(a[0]) + ' ' + loc(a[1])).join('\n'); closeSheets(); showTab('lab'); selectPane('lab', 'mnk'); runMnk();
+});
+
+/* ================= ЛАБА ================= */
+const frac = (a, b) => `<span class="frac"><span>${a}</span><span>${b}</span></span>`;
+const sq = (x) => `<span class="sq">√<span>${x}</span></span>`;
+const pick = (r, unit) => {
+  if (!r) return null;
+  const pw = r.p ? '·10' + Calc.supStr(r.p) : '';
+  const core = `(${loc(r.xs)} ± ${loc(r.ds)})${pw}`;
+  return { txt: core + (unit ? ' ' + unit : ''), html: core + (unit ? ' ' + esc(unit) : '') };
+};
+const pctS = (e) => (isFinite(e) ? loc(+e.toPrecision(2)) + ' %' : '—');
+
+/* --- прямые измерения --- */
+let stLast = null;
+['stIn', 'stDi', 'stName', 'stUnit'].forEach((id) => { $('#' + id).value = store.get(id, $('#' + id).value); });
+$('#stP').value = store.get('stP', '0.95');
+function runStats() {
+  ['stIn', 'stDi', 'stName', 'stUnit'].forEach((id) => store.set(id, $('#' + id).value));
+  store.set('stP', $('#stP').value);
+  const vals = nums($('#stIn').value);
+  const out = $('#stOut');
+  if (!vals.length) { out.innerHTML = '<p class="warn">Введи хотя бы одно число.</p>'; return; }
+  const dIraw = val('stDi');
+  if (Number.isNaN(dIraw)) { out.innerHTML = '<p class="warn">Δ прибора не читается.</p>'; return; }
+  const dI = Math.abs(dIraw || 0);
+  const P = +$('#stP').value;
+  const s = Calc.stats(vals, P, dI);
+  const nm = esc($('#stName').value.trim() || 'x'), unit = $('#stUnit').value.trim();
+  stLast = { s, nm: $('#stName').value.trim() || 'x', unit };
+  const res = pick(s.r, unit);
+  const Pl = loc(P.toFixed(2));
+  let h = '';
+  if (res) h += `<div class="result"><div class="main">${nm} = ${res.html}</div><div class="sub">ε = ${pctS(s.eps)}, P = ${Pl}, n = ${s.n}</div></div>`;
+  else h += `<div class="result"><div class="main">${nm} = ${esc(F6(s.mean))}${unit ? ' ' + esc(unit) : ''}</div><div class="sub">Погрешность нулевая: все значения одинаковые и Δ прибора не задана.</div></div>`;
+  h += '<div class="steps">';
+  h += `<div>Среднее: ${nm}̄ = ${frac('Σ' + nm + 'ᵢ', 'n')} = <b>${esc(F6(s.mean))}</b></div>`;
+  if (s.n > 1) {
+    h += `<div>СКО: S = ${sq(frac('Σ(' + nm + 'ᵢ − ' + nm + '̄)²', 'n − 1'))} = <b>${esc(F4(s.S))}</b></div>`;
+    h += `<div>СКО среднего: S<sub>${nm}̄</sub> = ${frac('S', '√n')} = <b>${esc(F4(s.Sm))}</b></div>`;
+    h += `<div>Стьюдент: t(${Pl}; ${s.n - 1}) = <b>${loc(s.t.toFixed(3))}</b></div>`;
+    h += `<div>Случайная: Δ<sub>сл</sub> = t·S<sub>${nm}̄</sub> = <b>${esc(F4(s.dR))}</b></div>`;
+  } else h += '<div class="warn">Одно измерение — случайную погрешность не оценить, берётся только приборная.</div>';
+  if (s.dI) h += `<div>Приборная: Δ<sub>пр</sub> = <b>${esc(F4(s.dI))}</b></div>`;
+  if (s.dI && s.n > 1) h += `<div>Полная: Δ = ${sq('Δ<sub>сл</sub>² + Δ<sub>пр</sub>²')} = <b>${esc(F4(s.d))}</b></div>`;
+  h += `<div>Относительная: ε = ${frac('Δ', '|' + nm + '̄|')}·100 % = <b>${pctS(s.eps)}</b></div>`;
+  h += '</div>';
+  if (s.n > 1) {
+    const big = s.dev.map((d) => Math.abs(d) > 3 * s.S && s.n >= 4);
+    h += `<div class="tblwrap"><table class="tbl"><tr><th>i</th><th>${nm}ᵢ</th><th>${nm}ᵢ − ${nm}̄</th><th>(${nm}ᵢ − ${nm}̄)²</th></tr>`;
+    vals.forEach((v, i) => { h += `<tr${big[i] ? ' style="color:var(--bad)"' : ''}><td>${i + 1}</td><td>${esc(F6(v))}</td><td>${esc(F4(s.dev[i]))}</td><td>${esc(F4(s.dev[i] ** 2))}</td></tr>`; });
+    h += `<tr><th>Σ</th><td>${esc(F6(s.mean * s.n))}</td><td>0</td><td>${esc(F4(s.ss))}</td></tr></table></div>`;
+    if (big.some(Boolean)) h += '<p class="warn">Красным — отклонение больше 3S: проверь, не промах ли это.</p>';
+  }
+  out.innerHTML = h;
+  stLast.text = res ? `${stLast.nm} = ${res.txt}; ε = ${pctS(s.eps)}; P = ${Pl}; n = ${s.n}` : `${stLast.nm} = ${F6(s.mean)}`;
+}
+$('#stGo').addEventListener('click', runStats);
+$('#stCopy').addEventListener('click', () => { if (!stLast) runStats(); if (stLast && stLast.text) copy(stLast.text); });
+$('#stToInd').addEventListener('click', () => {
+  if (!stLast) runStats(); if (!stLast) return;
+  const name = stLast.nm.replace(/[^A-Za-zА-Яа-яЁёΑ-Ωα-ω_0-9']/g, '') || 'x';
+  const rows = readRows(); const i = rows.findIndex((r) => r.name === name);
+  const row = { name, v: loc(+stLast.s.mean.toPrecision(10)), d: stLast.s.d ? loc(+stLast.s.d.toPrecision(4)) : '' };
+  if (i >= 0) rows[i] = row; else rows.push(row);
+  renderRows(rows); selectPane('lab', 'ind'); toast(`${name} добавлена в косвенные`);
+});
+
+/* --- косвенные --- */
+let indLast = null;
+function readRows() { return $$('.varrow', $('#indRows')).map((r) => ({ name: $('.nm', r).textContent, v: $('.iv', r).value, d: $('.id', r).value })); }
+function renderRows(rows) {
+  $('#indRows').innerHTML = rows.map((r) => `<div class="varrow"><div class="nm" title="${esc(r.name)}">${esc(r.name)}</div><input class="inp iv" inputmode="decimal" value="${esc(r.v)}" placeholder="значение"><input class="inp id" inputmode="decimal" value="${esc(r.d)}" placeholder="0"><button aria-label="Убрать">✕</button></div>`).join('');
+  store.set('indRows', rows);
+}
+$('#indRows').addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { e.target.parentElement.remove(); store.set('indRows', readRows()); } });
+$('#indRows').addEventListener('input', () => store.set('indRows', readRows()));
+$('#indF').value = store.get('indF', '');
+$('#indUnit').value = store.get('indUnit', '');
+renderRows(store.get('indRows', []));
+function indFormula() {
+  const raw = $('#indF').value.trim();
+  const { name, expr } = Calc.splitAssign(raw);
+  return { name: name || 'f', expr };
+}
+$('#indDetect').addEventListener('click', () => {
+  store.set('indF', $('#indF').value);
+  try {
+    const { expr } = indFormula();
+    const vars = [...Calc.collectVars(Calc.parse(expr))];
+    const old = readRows();
+    const rows = vars.map((n) => old.find((r) => r.name === n) || { name: n, v: '', d: '' });
+    renderRows(rows);
+    if (vars.some((v) => v.length > 2)) toast('Если «' + vars.find((v) => v.length > 2) + '» — это произведение, поставь между буквами · или пробел');
+  } catch (e) { toast(e.message); }
+});
+$('#indAdd').addEventListener('click', () => {
+  const n = prompt('Имя переменной (например, m или Δt)'); if (!n) return;
+  const rows = readRows(); rows.push({ name: n.trim(), v: '', d: '' }); renderRows(rows);
+});
+function runInd() {
+  store.set('indF', $('#indF').value); store.set('indUnit', $('#indUnit').value);
+  const out = $('#indOut');
+  try {
+    const { name, expr } = indFormula();
+    if (!expr.trim()) throw new Error('Введи формулу');
+    const rows = readRows().map((r) => {
+      const v = r.v.trim() ? Calc.evalExpr(r.v) : NaN;
+      const d = r.d.trim() ? Calc.evalExpr(r.d) : 0;
+      if (!isFinite(v)) throw new Error(`Не задано значение «${r.name}»`);
+      return { name: r.name, v, d: Math.abs(d) };
+    });
+    const ast = Calc.parse(expr, new Set(rows.map((r) => r.name)));
+    const miss = [...Calc.collectVars(ast)].filter((n) => !rows.some((r) => r.name === n));
+    if (miss.length) throw new Error('Нет значений для: ' + miss.join(', ') + ' — нажми «Найти переменные»');
+    const r = Calc.indirect(ast, rows);
+    const unit = $('#indUnit').value.trim();
+    const res = pick(r.r, unit);
+    let h = `<div class="result"><div class="main">${esc(name)} = ${res ? res.html : esc(F6(r.f)) + (unit ? ' ' + esc(unit) : '')}</div><div class="sub">${res ? 'ε = ' + pctS(r.eps) + '. ' : ''}Режим углов: ${ST.mode === 'deg' ? 'градусы' : 'радианы'}</div></div>`;
+    h += `<div class="steps"><div>Значение: ${esc(name)} = <b>${esc(F6(r.f))}</b></div><div>Δ${esc(name)} = ${sq('Σ(∂' + esc(name) + '/∂xᵢ · Δxᵢ)²')} = <b>${esc(F4(r.d))}</b></div></div>`;
+    h += `<div class="tblwrap"><table class="tbl"><tr><th>xᵢ</th><th>∂${esc(name)}/∂xᵢ</th><th>·Δxᵢ</th><th>вклад</th></tr>`;
+    const tot = r.parts.reduce((s, p) => s + p.c * p.c, 0) || 1;
+    r.parts.forEach((p) => { h += `<tr><td>${esc(p.name)}</td><td>${p.der === null ? '—' : esc(F4(p.der))}</td><td>${esc(F4(Math.abs(p.c)))}</td><td>${Math.round((p.c * p.c * 100) / tot)} %</td></tr>`; });
+    h += '</table></div><p class="note">Столбец «вклад» показывает, какая величина даёт основную погрешность — её и надо мерить точнее.</p>';
+    out.innerHTML = h;
+    indLast = res ? `${name} = ${res.txt}; ε = ${pctS(r.eps)}` : `${name} = ${F6(r.f)}`;
+  } catch (e) { out.innerHTML = `<p class="warn">${esc(e.message)}</p>`; indLast = null; }
+}
+$('#indGo').addEventListener('click', runInd);
+$('#indCopy').addEventListener('click', () => { if (!indLast) runInd(); if (indLast) copy(indLast); });
+modeHooks.push(() => { if ($('#indOut').innerHTML) runInd(); });
+
+/* --- МНК --- */
+let mkLast = null;
+['mkIn', 'mkX', 'mkY'].forEach((id) => { $('#' + id).value = store.get(id, ''); });
+$('#mkP').value = store.get('mkP', '0.95'); $('#mkO').checked = store.get('mkO', false);
+function runMnk() {
+  ['mkIn', 'mkX', 'mkY'].forEach((id) => store.set(id, $('#' + id).value));
+  store.set('mkP', $('#mkP').value); store.set('mkO', $('#mkO').checked);
+  const pts = $('#mkIn').value.split('\n').map(nums).filter((a) => a.length >= 2).map((a) => [a[0], a[1]]);
+  const out = $('#mkOut');
+  try {
+    const r = Calc.linfit(pts, $('#mkO').checked, +$('#mkP').value);
+    const xn = $('#mkX').value.trim() || 'x', yn = $('#mkY').value.trim() || 'y';
+    const kS = r.rk ? pick(r.rk, '').txt : esc(F6(r.k));
+    const bS = $('#mkO').checked ? '0' : r.rb ? pick(r.rb, '').txt : esc(F6(r.b));
+    let h = `<div class="result"><div class="main">k = ${kS}<br>b = ${bS}</div><div class="sub">${esc(yn)} = k·${esc(xn)} + b · R² = ${loc(r.R2.toFixed(4))} · n = ${r.n} · t(${loc((+$('#mkP').value).toFixed(2))}; ${r.df}) = ${loc(r.t.toFixed(3))}</div></div>`;
+    h += `<div class="steps"><div>k = ${frac('nΣxy − ΣxΣy', 'nΣx² − (Σx)²')} = <b>${esc(F6(r.k))}</b>, S<sub>k</sub> = <b>${esc(F4(r.Sk))}</b></div>`;
+    if (!$('#mkO').checked) h += `<div>b = ${frac('Σy − kΣx', 'n')} = <b>${esc(F6(r.b))}</b>, S<sub>b</sub> = <b>${esc(F4(r.Sb))}</b></div>`;
+    h += '<div>Δk = t·S<sub>k</sub>, Δb = t·S<sub>b</sub></div></div>';
+    h += '<p class="note">Нелинейную зависимость сначала спрями: например, для T = 2π√(L/g) строй T² от L, тогда g = 4π²/k.</p>';
+    out.innerHTML = h;
+    mkLast = { pts, r, xn, yn, text: `k = ${kS}; b = ${bS}; R² = ${loc(r.R2.toFixed(4))}` };
+    $('#mkCv').hidden = false; drawPlot();
+  } catch (e) { out.innerHTML = `<p class="warn">${esc(e.message)}</p>`; $('#mkCv').hidden = true; mkLast = null; }
+}
+function niceStep(range, n) {
+  const raw = range / n, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+  return (m < 1.5 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10) * p;
+}
+function drawPlot() {
+  const cv = $('#mkCv'); if (!mkLast || cv.hidden) return;
+  const { pts, r, xn, yn } = mkLast;
+  const W = cv.clientWidth || 340, H = cv.clientHeight || 255, dpr = window.devicePixelRatio || 1;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const cs = getComputedStyle(document.body);
+  const col = (n) => cs.getPropertyValue(n).trim();
+  let xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+  let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  if ($('#mkO').checked) { x0 = Math.min(x0, 0); y0 = Math.min(y0, 0); }
+  const fy = (v) => r.k * v + r.b; y0 = Math.min(y0, fy(x0), fy(x1)); y1 = Math.max(y1, fy(x0), fy(x1));
+  const px = (x1 - x0 || 1) * 0.06, py = (y1 - y0 || 1) * 0.08; x0 -= px; x1 += px; y0 -= py; y1 += py;
+  const L = 48, R = 12, T = 14, B = 34;
+  const X = (v) => L + ((v - x0) / (x1 - x0)) * (W - L - R), Y = (v) => H - B - ((v - y0) / (y1 - y0)) * (H - T - B);
+  x.clearRect(0, 0, W, H);
+  x.font = '11px ' + col('--mono'); x.fillStyle = col('--dim'); x.strokeStyle = col('--line'); x.lineWidth = 1;
+  const sx = niceStep(x1 - x0, 6), sy = niceStep(y1 - y0, 5);
+  x.textAlign = 'center';
+  for (let v = Math.ceil(x0 / sx) * sx; v <= x1; v += sx) { x.beginPath(); x.moveTo(X(v), T); x.lineTo(X(v), H - B); x.stroke(); x.fillText(F4(+v.toPrecision(6)), X(v), H - B + 14); }
+  x.textAlign = 'right';
+  for (let v = Math.ceil(y0 / sy) * sy; v <= y1; v += sy) { x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(W - R, Y(v)); x.stroke(); x.fillText(F4(+v.toPrecision(6)), L - 5, Y(v) + 4); }
+  x.strokeStyle = col('--acc'); x.lineWidth = 2; x.beginPath(); x.moveTo(X(x0), Y(fy(x0))); x.lineTo(X(x1), Y(fy(x1))); x.stroke();
+  x.fillStyle = col('--text');
+  pts.forEach(([a, b]) => { x.beginPath(); x.arc(X(a), Y(b), 3.5, 0, 7); x.fill(); });
+  x.fillStyle = col('--dim'); x.font = '12px ' + col('--sans');
+  x.textAlign = 'right'; x.fillText(xn, W - R, H - 6);
+  x.textAlign = 'left'; x.fillText(yn, L + 4, T + 10);
+}
+$('#mkGo').addEventListener('click', runMnk);
+$('#mkCopy').addEventListener('click', () => { if (!mkLast) runMnk(); if (mkLast) copy(mkLast.text); });
+window.addEventListener('resize', () => drawPlot());
+
+/* ================= ЖИЗНЬ ================= */
+const live = (ids, fn) => { ids.forEach((id) => $('#' + id).addEventListener('input', () => { store.set('f_' + id, $('#' + id).value); fn(); })); ids.forEach((id) => { const v = store.get('f_' + id, null); if (v !== null) $('#' + id).value = v; }); fn(); };
+const r1 = (v, d = 1) => loc(Calc.roundAt(v, d));
+
+/* смесь 2Т */
+$('#mxRc').innerHTML = [25, 32, 40, 50, 100].map((n) => `<button data-n="${n}">1:${n}</button>`).join('');
+$('#mxVc').innerHTML = ['0,5', '1', '2', '5', '10', '20'].map((n) => `<button data-v="${n}">${n} л</button>`).join('');
+function mix() {
+  const N = val('mxN'), V = val('mxV');
+  $$('#mxRc button').forEach((b) => b.classList.toggle('on', +b.dataset.n === N));
+  $$('#mxVc button').forEach((b) => b.classList.toggle('on', +b.dataset.v.replace(',', '.') === V));
+  if (ok(N, V) && N > 0 && V >= 0) {
+    const oil = (V * 1000) / N;
+    $('#mxOut').textContent = r1(oil) + ' мл';
+    $('#mxSub').textContent = `На 1 л бензина — ${r1(1000 / N)} мл. Всего смеси ≈ ${r1(V + oil / 1000, 2)} л.`;
+  } else { $('#mxOut').textContent = '—'; $('#mxSub').textContent = ''; }
+  const O = val('mxOil');
+  $('#mxOut2').innerHTML = ok(N, O) && N > 0 ? kv([['Бензина на это масло', r1((O * N) / 1000, 2) + ' л']]) : '';
+  const FV = val('mxFv'), N1 = val('mxF1'), N2 = val('mxF2');
+  let h = '';
+  if (ok(FV, N1, N2) && FV > 0 && N1 > 0 && N2 > 0) {
+    const f = (FV * N1) / (N1 + 1), o = FV / (N1 + 1);
+    if (Math.abs(N1 - N2) < 1e-9) h = kv([['Ничего добавлять не нужно', '✓']]);
+    else if (N2 < N1) h = kv([['Долить масла', r1((f / N2 - o) * 1000) + ' мл']]);
+    else h = kv([['Долить бензина', r1(o * N2 - f, 2) + ' л'], ['Получится смеси', r1(o * (N2 + 1), 2) + ' л']]);
+  }
+  $('#mxOut3').innerHTML = h;
+}
+$('#mxRc').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; $('#mxN').value = b.dataset.n; store.set('f_mxN', b.dataset.n); mix(); });
+$('#mxVc').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; $('#mxV').value = b.dataset.v; store.set('f_mxV', b.dataset.v); mix(); });
+live(['mxN', 'mxV', 'mxOil', 'mxFv', 'mxF1', 'mxF2'], mix);
+
+/* единицы */
+const UNITS = {
+  'Длина': { 'мм': 1e-3, 'см': 1e-2, 'м': 1, 'км': 1e3, 'мкм': 1e-6, 'дюйм': 0.0254, 'фут': 0.3048, 'ярд': 0.9144, 'миля': 1609.344, 'мор. миля': 1852 },
+  'Масса': { 'мг': 1e-6, 'г': 1e-3, 'кг': 1, 'т': 1e3, 'фунт': 0.45359237, 'унция': 0.028349523125, 'карат': 2e-4 },
+  'Давление': { 'Па': 1, 'кПа': 1e3, 'МПа': 1e6, 'бар': 1e5, 'атм': 101325, 'кгс/см² (ат)': 98066.5, 'мм рт. ст.': 133.322368, 'мм вод. ст.': 9.80665, 'psi': 6894.757293 },
+  'Температура': { '°C': 'C', 'K': 'K', '°F': 'F' },
+  'Объём': { 'мл (см³)': 1e-6, 'л (дм³)': 1e-3, 'м³': 1, 'мм³': 1e-9, 'галлон США': 3.785411784e-3, 'жидк. унция США': 2.95735295625e-5 },
+  'Площадь': { 'мм²': 1e-6, 'см²': 1e-4, 'м²': 1, 'сотка': 100, 'га': 1e4, 'км²': 1e6 },
+  'Скорость': { 'м/с': 1, 'км/ч': 1 / 3.6, 'узел': 1852 / 3600, 'миль/ч': 0.44704 },
+  'Сила': { 'Н': 1, 'кН': 1e3, 'кгс': 9.80665, 'тс': 9806.65, 'дин': 1e-5 },
+  'Энергия': { 'Дж': 1, 'кДж': 1e3, 'МДж': 1e6, 'кал': 4.1868, 'ккал': 4186.8, 'Вт·ч': 3600, 'кВт·ч': 3.6e6, 'эВ': 1.602176634e-19 },
+  'Мощность': { 'Вт': 1, 'кВт': 1e3, 'л. с.': 735.49875, 'hp (англ.)': 745.69987158, 'ккал/ч': 1.163 },
+  'Момент': { 'Н·м': 1, 'кгс·м': 9.80665, 'lbf·ft': 1.3558179483 },
+  'Угол': { 'градус': Math.PI / 180, 'рад': 1, 'угл. мин': Math.PI / 10800, 'угл. сек': Math.PI / 648000, 'оборот': 2 * Math.PI, 'град (гон)': Math.PI / 200 },
+  'Время': { 'мс': 1e-3, 'с': 1, 'мин': 60, 'ч': 3600, 'сутки': 86400 },
+  'Данные': { 'бит': 1 / 8, 'байт': 1, 'КБ': 1024, 'МБ': 1024 ** 2, 'ГБ': 1024 ** 3, 'ТБ': 1024 ** 4 },
+};
+let unCat = store.get('unCat', 'Длина');
+if (!UNITS[unCat]) unCat = 'Длина';
+$('#unCat').innerHTML = Object.keys(UNITS).map((c) => `<button data-c="${c}">${c}</button>`).join('');
+function unSel() {
+  $$('#unCat button').forEach((b) => b.classList.toggle('on', b.dataset.c === unCat));
+  const from = store.get('unFrom_' + unCat, Object.keys(UNITS[unCat])[unCat === 'Длина' ? 2 : 0]);
+  $('#unFrom').innerHTML = Object.keys(UNITS[unCat]).map((u) => `<option${u === from ? ' selected' : ''}>${u}</option>`).join('');
+  units();
+}
+function toK(v, u) { return u === 'C' ? v + 273.15 : u === 'F' ? ((v - 32) * 5) / 9 + 273.15 : v; }
+function fromK(k, u) { return u === 'C' ? k - 273.15 : u === 'F' ? ((k - 273.15) * 9) / 5 + 32 : k; }
+function units() {
+  const v = val('unV'), from = $('#unFrom').value, tab = UNITS[unCat];
+  if (!ok(v)) { $('#unList').innerHTML = ''; return; }
+  $('#unList').innerHTML = Object.keys(tab).map((u) => {
+    let r;
+    if (unCat === 'Температура') r = fromK(toK(v, tab[from]), tab[u]);
+    else r = (v * tab[from]) / tab[u];
+    return `<button class="${u === from ? 'src' : ''}" data-r="${r}"><span>${u}</span><span>${esc(F(r, 8))}</span></button>`;
+  }).join('');
+}
+$('#unCat').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; unCat = b.dataset.c; store.set('unCat', unCat); unSel(); });
+$('#unFrom').addEventListener('change', () => { store.set('unFrom_' + unCat, $('#unFrom').value); units(); });
+$('#unList').addEventListener('click', (e) => { const b = e.target.closest('button[data-r]'); if (b) copy(String(+(+b.dataset.r).toPrecision(10)).replace('.', ST.dec)); });
+live(['unV'], () => {}); unSel(); $('#unV').addEventListener('input', units);
+
+/* электрика */
+const OH = ['ohU', 'ohI', 'ohR', 'ohP'];
+OH.forEach((id) => $('#' + id).addEventListener('input', () => $('#' + id).classList.remove('calc')));
+$('#ohGo').addEventListener('click', () => {
+  const got = {};
+  OH.forEach((id) => { const el = $('#' + id); if (!el.classList.contains('calc')) { const v = val(id); if (ok(v)) got[id.slice(2)] = v; } });
+  const k = Object.keys(got);
+  if (k.length < 2) return toast('Нужно заполнить любые два поля');
+  let { U, I, R, P } = got;
+  const two = k.slice(0, 2).sort().join('');
+  switch (two) {
+    case 'IU': R = U / I; P = U * I; break;
+    case 'RU': I = U / R; P = (U * U) / R; break;
+    case 'PU': I = P / U; R = (U * U) / P; break;
+    case 'IR': U = I * R; P = I * I * R; break;
+    case 'IP': U = P / I; R = P / (I * I); break;
+    case 'PR': U = Math.sqrt(P * R); I = Math.sqrt(P / R); break;
+  }
+  const res = { U, I, R, P };
+  OH.forEach((id) => {
+    const key = id.slice(2), el = $('#' + id);
+    if (!k.slice(0, 2).includes(key)) { el.value = isFinite(res[key]) ? F6(res[key]) : '—'; el.classList.add('calc'); }
+  });
+});
+$('#ohClr').addEventListener('click', () => OH.forEach((id) => { $('#' + id).value = ''; $('#' + id).classList.remove('calc', 'bad'); }));
+live(['dvU', 'dvR1', 'dvR2'], () => {
+  const U = val('dvU'), A = val('dvR1'), B = val('dvR2');
+  $('#dvOut').innerHTML = ok(U, A, B) && A + B > 0 ? kv([['Uвых = U·R2/(R1+R2)', F6((U * B) / (A + B)) + ' В'], ['Ток делителя', F4((U / (A + B)) * 1000) + ' мА'], ['Коэффициент', F4(B / (A + B))]]) : '';
+});
+live(['bS', 'bP', 'bAh', 'bI', 'bVn', 'bVx', 'bVm'], () => {
+  const S = val('bS'), P = val('bP'), Ah = val('bAh'), I = val('bI'), Vn = val('bVn'), Vx = val('bVx'), Vm = val('bVm');
+  if (!ok(S, P, Ah, Vn)) { $('#bOut').innerHTML = ''; return; }
+  const rows = [['Ячеек', `${S * P} шт (${S}S${P}P)`], ['Напряжение ном.', F4(S * Vn) + ' В']];
+  if (ok(Vx)) rows.push(['Полный заряд', F4(S * Vx) + ' В']);
+  if (ok(Vm)) rows.push(['Разряжена до', F4(S * Vm) + ' В']);
+  rows.push(['Ёмкость', F4(P * Ah) + ' А·ч'], ['Энергия', F4(S * P * Vn * Ah) + ' Вт·ч']);
+  if (ok(I)) rows.push(['Ток макс.', F4(P * I) + ' А'], ['Мощность макс. (ном.)', F4(P * I * S * Vn) + ' Вт']);
+  $('#bOut').innerHTML = kv(rows);
+});
+
+/* треугольник */
+function tri() {
+  let a = val('trA'), b = val('trB'), c = val('trC');
+  const has = (v) => ok(v) && v > 0;
+  const out = $('#trOut');
+  const n = [a, b, c].filter(has).length;
+  if (n < 2) { out.innerHTML = ''; return; }
+  if (has(a) && has(b)) c = Math.hypot(a, b);
+  else if (has(a) && has(c)) { if (c <= a) { out.innerHTML = '<span class="warn">Гипотенуза должна быть больше катета</span><span></span>'; return; } b = Math.sqrt(c * c - a * a); }
+  else { if (c <= b) { out.innerHTML = '<span class="warn">Гипотенуза должна быть больше катета</span><span></span>'; return; } a = Math.sqrt(c * c - b * b); }
+  const u = ST.mode === 'deg' ? '°' : ' рад';
+  const al = Calc.FN.arctg.f(a / b), be = Calc.FN.arctg.f(b / a);
+  out.innerHTML = kv([['a', F6(a)], ['b', F6(b)], ['c', F6(c)], ['α (напротив a)', F6(al) + u], ['β (напротив b)', F6(be) + u], ['Площадь', F6((a * b) / 2)], ['Уклон a/b', F4((a / b) * 100) + ' %']]);
+}
+live(['trA', 'trB', 'trC'], tri);
+modeHooks.push(tri);
+
+/* проценты */
+live(['p1x', 'p1y'], () => { const x = val('p1x'), y = val('p1y'); $('#p1o').innerHTML = ok(x, y) ? kv([[`${loc(x)} % от ${loc(y)}`, F6((x * y) / 100)], ['Прибавить', F6(y * (1 + x / 100))], ['Вычесть', F6(y * (1 - x / 100))]]) : ''; });
+live(['p2a', 'p2b'], () => { const a = val('p2a'), b = val('p2b'); $('#p2o').innerHTML = ok(a, b) && b !== 0 ? kv([['A от B', F4((a / b) * 100) + ' %']]) : ''; });
+live(['p3a', 'p3b'], () => { const a = val('p3a'), b = val('p3b'); $('#p3o').innerHTML = ok(a, b) && a !== 0 ? kv([['Изменение', (b >= a ? '+' : '') + F4(((b - a) / Math.abs(a)) * 100) + ' %'], ['Разница', F6(b - a)], ['Во сколько раз', F4(b / a)]]) : ''; });
+live(['p4a', 'p4b', 'p4c'], () => { const a = val('p4a'), b = val('p4b'), c = val('p4c'); $('#p4o').innerHTML = ok(a, b, c) && a !== 0 ? kv([['x = b·c / a', F6((b * c) / a)]]) : ''; });
+
+/* поездка */
+live(['tpD', 'tpC', 'tpP', 'tpN'], () => {
+  const d = val('tpD'), c = val('tpC'), p = val('tpP'), n = val('tpN');
+  if (!ok(d, c)) { $('#tpOut').innerHTML = ''; return; }
+  const L = (d * c) / 100; const rows = [['Топлива', r1(L, 1) + ' л']];
+  if (ok(p)) { rows.push(['Стоимость', r1(L * p, 0) + ' ₽']); if (ok(n) && n > 1) rows.push(['С человека', r1((L * p) / n, 0) + ' ₽']); }
+  $('#tpOut').innerHTML = kv(rows);
+});
+live(['tfL', 'tfK'], () => { const l = val('tfL'), k = val('tfK'); $('#tfOut').innerHTML = ok(l, k) && k > 0 && l > 0 ? kv([['Расход', r1((l / k) * 100, 2) + ' л/100 км'], ['Пробег на литр', r1(k / l, 2) + ' км/л']]) : ''; });
+
+/* ================= СПРАВКА ================= */
+$('#helpBody').innerHTML = `
+<h2>Как писать выражения</h2>
+<ul>
+  <li><code>2,5</code> и <code>2.5</code> — одно и то же. Аргументы функций разделяй <code>;</code>: <code>log(2; 8)</code>, <code>root(27; 3)</code>.</li>
+  <li>Знак умножения можно пропускать: <code>2π</code>, <code>3(4+5)</code>, <code>2sin30</code>, <code>m g h</code>.</li>
+  <li>Скобки у функций необязательны: <code>sin30</code>, <code>ln 2</code>. Квадрат синуса: <code>sin²30</code>.</li>
+  <li><code>°</code> после числа — «это градусы», работает и в режиме радиан: <code>sin 30°</code>.</li>
+  <li>Степень десяти: <code>1,5e-3</code> или <code>1,5·10^(-3)</code>. Процент: <code>15%</code> = 0,15.</li>
+  <li>Несколько строк = переменные: <code>g = 9,81</code>, потом <code>t = √(2h/g)</code>. <code>Ans</code> — прошлый результат. Всё после <code>#</code> — комментарий (туда удобно писать единицы).</li>
+  <li>Нажми на строку результата — число вставится в выражение.</li>
+</ul>
+<h3>arctg и arcctg</h3>
+<p>arctg даёт угол от −90° до 90°, arcctg — от 0° до 180° (как в учебниках: arcctg(−1) = 135°). В режиме РАДИАНЫ ответ в радианах. Переключатель влияет и на ввод для sin, cos, tg, ctg.</p>
+<h3>Лаба</h3>
+<p><b>Прямые измерения:</b> Δ = t·S/√n, а если есть приборная погрешность — Δ = √(Δсл² + Δпр²). Ответ округляется по правилу: в погрешности две значащие цифры, если первая 1 или 2, иначе одна; среднее — до того же разряда. Если ваша методичка требует иначе — смотри шаги расчёта, все промежуточные числа показаны.</p>
+<p><b>Косвенные:</b> впиши формулу, нажми «Найти переменные», заполни значения и Δ. Кнопка «В косвенные» на вкладке прямых измерений сама перенесёт среднее и погрешность.</p>
+<h3>Настройки</h3>
+<div class="g2">
+  <label class="fl">Тема<select id="setTheme"><option value="auto">как в системе</option><option value="dark">тёмная</option><option value="light">светлая</option></select></label>
+  <label class="fl">Знаков в ответе<select id="setSig"><option>6</option><option>8</option><option>10</option><option>12</option><option>15</option></select></label>
+</div>
+<label class="fl">Десятичный знак в ответах<select id="setDec"><option value=",">запятая 3,14</option><option value=".">точка 3.14</option></select></label>
+<h3>Установка на телефон</h3>
+<p>Этот файл работает и сам по себе — открой <code>index.html</code> в браузере. Чтобы он открывался как приложение с иконкой и распознавание фото работало без интернета, положи всю папку на любой https-хостинг (GitHub Pages, Netlify) и открой ссылку в Chrome → меню ⋮ → «Установить приложение» (на iPhone: Safari → «Поделиться» → «На экран Домой»). После первого открытия всё сохранится в телефоне.</p>
+<p class="note" id="swState"></p>
+`;
+$('#setTheme').value = ST.theme; $('#setSig').value = String(ST.sig); $('#setDec').value = ST.dec;
+$('#setTheme').onchange = (e) => { ST.theme = e.target.value; save(); applyTheme(); setMode(ST.mode); drawPlot(); };
+$('#setSig').onchange = (e) => { ST.sig = +e.target.value; save(); preview(); };
+$('#setDec').onchange = (e) => { ST.dec = e.target.value; save(); preview(); };
+
+/* ================= СТАРТ ================= */
+applyTheme();
+setMode(ST.mode);
+showTab(ST.tab);
+selectPane('lab', ST.lab);
+selectPane('life', ST.life);
+preview();
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  navigator.serviceWorker.register('sw.js').then(() => {
+    const s = $('#swState'); if (s) s.textContent = 'Офлайн-режим включён: приложение сохранено в телефоне.';
+  }).catch(() => {});
+}
+})();
+
+</script>
+</body>
+</html>
