@@ -102,7 +102,7 @@ html[data-theme=light] .screen{--grid:rgba(30,60,90,.06)}
 .k.f.trig{color:var(--acc);font-weight:700}
 .k.op{background:var(--key-hi);font-size:22px}
 .k.ctl{background:var(--key-hi);font-size:18px;color:var(--dim)}
-.k.go{grid-column:span 4;background:var(--acc);color:var(--acc-ink);font:800 18px/1 var(--sans);letter-spacing:.02em}
+.k.go{grid-column:span 3;background:var(--acc);color:var(--acc-ink);font:800 18px/1 var(--sans);letter-spacing:.02em}
 .k.num{font-family:var(--mono);font-weight:600}
 .k sup{font-size:.6em}
 
@@ -211,6 +211,37 @@ progress{width:100%;height:6px;accent-color:var(--acc)}
 .toast{position:fixed;left:50%;top:calc(76px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:40;background:var(--text);color:var(--bg);
   padding:10px 14px;border-radius:12px;font-size:14px;display:flex;gap:12px;align-items:center;max-width:92vw;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .toast button{border:0;background:transparent;color:var(--acc);font-weight:800;filter:brightness(.8)}
+
+/* ===== заметные клавиши ===== */
+.k.bs{background:#ff6a1a;color:#1e0a00;font-size:24px}
+.k.bs:active{background:#ff8640}
+.k.nl{background:#19c37d;color:#032414;font-size:24px;font-weight:800}
+.k.nl:active{background:#3ad992}
+.k.slot{background:var(--key-hi);color:var(--acc);font-size:20px;font-weight:800}
+.kfr{display:inline-flex;flex-direction:column;align-items:center;gap:3px}
+.kfr i{display:block;width:15px;height:11px;border:1.6px solid currentColor;border-radius:2px}
+.kfr b{display:block;width:22px;height:2px;background:currentColor;border-radius:1px}
+/* ===== формула как в тетради ===== */
+.pf{font-family:"Cambria Math","STIX Two Math","Latin Modern Math","Noto Serif","Times New Roman",serif;font-size:22px;line-height:1.25}
+.pf i{font-style:italic}
+.pf .fn{font-style:normal}
+.pf sup{font-size:.68em;vertical-align:.62em;line-height:0}
+.pf .pp{font-weight:300}
+.mf{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .14em}
+.mf>span{padding:0 .18em;white-space:nowrap}
+.mf>span:first-child{border-bottom:.08em solid currentColor;padding-bottom:.08em}
+.mf>span:last-child{padding-top:.06em}
+.mf .mf{font-size:.9em}
+.mr{display:inline-flex;align-items:stretch;white-space:nowrap}
+.mr .rs{display:flex;align-items:flex-end;font-size:1.1em;line-height:1;padding-right:.02em}
+.mr .mo{border-top:.07em solid currentColor;padding:.08em .1em 0 .1em}
+.mr .ri{font-size:.55em;vertical-align:1.1em;margin-right:-.25em}
+#pretty{padding:6px 12px;border-top:1px dashed var(--line);overflow-x:auto;white-space:nowrap;scrollbar-width:none;color:var(--text);min-height:0}
+#pretty:empty{display:none}
+#ocrPretty{background:var(--deep);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:-2px 0 10px;overflow-x:auto}
+#ocrPretty:empty{display:none}
+#ocrPretty div{padding:4px 0;white-space:nowrap}
+#ocrPretty .bad{color:var(--bad);font:13px var(--sans);white-space:normal}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 @media (min-height:820px){ :root{--kh:48px;--kfh:40px} }
 </style>
@@ -230,6 +261,7 @@ progress{width:100%;height:6px;accent-color:var(--acc)}
       <div class="screen">
         <textarea id="ed" spellcheck="false" autocomplete="off" autocapitalize="off" inputmode="none"
           placeholder="Пиши выражение. Можно в несколько строк:&#10;g = 9,81&#10;t = √(2·1,5/g)"></textarea>
+        <div class="pf" id="pretty" aria-label="Формула как в тетради"></div>
         <div class="rows" id="rows"></div>
         <div class="display">
           <span class="badge" id="badge">DEG</span>
@@ -455,14 +487,15 @@ progress{width:100%;height:6px;accent-color:var(--acc)}
       <label class="btn primary filebtn">Сфотографировать или выбрать<input type="file" accept="image/*" id="ocrFile"></label>
       <button class="btn" id="ocrPaste">Вставить из буфера</button>
     </div>
-    <label class="chk"><input type="checkbox" id="ocrDigits" checked> Только цифры и знаки (для таблиц)</label>
+    <label class="chk"><input type="checkbox" id="ocrDigits"> Только цифры и знаки (без букв)</label>
     <label class="chk"><input type="checkbox" id="ocrBin" checked> Усилить контраст (ч/б)</label>
-    <label class="fl">Что на фото<select id="ocrPsm"><option value="6">Таблица или несколько строк</option><option value="7">Одна строка</option><option value="11">Числа вразброс</option></select></label>
+    <label class="fl">Что на фото<select id="ocrPsm"><option value="auto">Авто: сам найдёт дроби и корни</option><option value="formula">Формула (дроби, корни, степени)</option><option value="6">Таблица или несколько строк чисел</option><option value="7">Одна строка</option><option value="11">Числа вразброс</option></select></label>
     <canvas id="ocrPrev" hidden></canvas>
     <div class="status" id="ocrStatus">Распознавание запустится, когда выберешь фото.</div>
     <progress id="ocrProg" max="1" value="0" hidden></progress>
     <label class="fl">Распознанный текст — проверь и исправь
-      <textarea id="ocrText" rows="6" spellcheck="false" autocapitalize="off"></textarea></label>
+      <textarea id="ocrText" rows="4" spellcheck="false" autocapitalize="off"></textarea></label>
+    <div class="pf" id="ocrPretty"></div>
     <div class="btnrow">
       <button class="btn sm" id="ocrClean">Почистить</button>
       <button class="btn sm" id="ocrToSt">В статистику</button>
@@ -470,7 +503,7 @@ progress{width:100%;height:6px;accent-color:var(--acc)}
     </div>
     <button class="btn primary wide" id="ocrGo">Посчитать</button>
     <details><summary>Распознаёт плохо или не запускается</summary>
-      <p class="note">Лучше всего читаются печатные цифры: снимай ровно, при хорошем свете, обрежь фото до нужной таблицы. Рукописные формулы распознаются плохо — их быстрее набрать.</p>
+      <p class="note">Снимай ровно и при хорошем свете, обрежь фото до одной формулы или таблицы — так дроби находятся надёжнее. Печатное читается хорошо, аккуратный почерк — средне. Сравни строку «как в тетради» под текстом с фото и поправь, где не совпало. Греческие буквы (π, α, Δ) движок не знает — их допиши руками.</p>
       <p class="note">Запасной путь, тоже без интернета: открой фото в галерее → Google Объектив / «Текст на фото» (Android) или «Live Text» (iPhone) → выдели и скопируй текст → кнопка «Вставить из буфера».</p>
     </details>
   </div>
@@ -599,7 +632,7 @@ const Calc = (() => {
           if (s[j] === '-' || s[j] === '+') str += s[j++];
           while (isD(s[j])) str += s[j++];
         }
-        T.push({ t: 'num', v: parseFloat(str) }); i = j; continue;
+        T.push({ t: 'num', v: parseFloat(str), raw: s.slice(i, j) }); i = j; continue;
       }
       if (c === 'π') { T.push({ t: 'id', v: 'π' }); i++; continue; }
       if (ID0.test(c)) {
@@ -643,7 +676,7 @@ const Calc = (() => {
         if (isOp('*') || isOp('/')) { const op = T[i++].v; a = { k: 'bin', op, a, b: unary() }; }
         else if (startsOperand()) {
           if (T[i].t === 'num' && T[i - 1] && T[i - 1].t === 'num') err('Два числа подряд — пропущен знак действия?');
-          a = { k: 'bin', op: '*', a, b: unary() };
+          a = { k: 'bin', op: '*', a, b: unary(), imp: true };
         } else break;
       }
       return a;
@@ -671,7 +704,7 @@ const Calc = (() => {
     function primary() {
       const t = T[i];
       if (!t) err('Выражение не закончено');
-      if (t.t === 'num') { i++; return { k: 'n', v: t.v }; }
+      if (t.t === 'num') { i++; return { k: 'n', v: t.v, raw: t.raw }; }
       if (t.t === 'op') {
         if (t.v === '(') {
           i++; const a = expr();
@@ -706,8 +739,8 @@ const Calc = (() => {
     }
     function ident(name) {
       if (known.has(name)) return { k: 'v', name };
-      if (name === 'π' || name === 'pi') return { k: 'n', v: Math.PI };
-      if (name === 'e') return { k: 'n', v: Math.E };
+      if (name === 'π' || name === 'pi') return { k: 'n', v: Math.PI, sym: 'π' };
+      if (name === 'e') return { k: 'n', v: Math.E, sym: 'e' };
       if (name === 'Ans' || name === 'ans') return { k: 'v', name: 'Ans' };
       if (FN[name]) return call(name);
       for (const f of FN_SORTED) {
@@ -942,10 +975,74 @@ const Calc = (() => {
     return { f: f0, parts, d, eps: f0 !== 0 ? (d / Math.abs(f0)) * 100 : NaN, r: roundPair(f0, d) };
   }
 
+
+  /* ---------- формула «как в тетради» ---------- */
+  const HE = (x) => String(x).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const NAMEDPOW = new Set(['sin', 'cos', 'tg', 'tan', 'ctg', 'cot', 'sh', 'ch', 'th', 'cth', 'sinh', 'cosh', 'tanh', 'coth', 'ln', 'lg']);
+  function toHTML(node, dec = ',') {
+    const loc = (x) => (dec === ',' ? x.replace('.', ',') : x.replace(',', '.'));
+    const par = (x) => `<span class="pp">(</span>${x}<span class="pp">)</span>`;
+    const isAdd = (n) => n.k === 'bin' && (n.op === '+' || n.op === '-');
+    const atom = (n) => n.k === 'n' || n.k === 'v' || (n.k === 'call' && n.f !== 'fact');
+    const num = (n) => {
+      if (n.sym) return n.sym === 'π' ? 'π' : '<i>e</i>';
+      let r = (n.raw !== undefined ? n.raw : String(+n.v.toPrecision(10))).replace(/\.$/, '');
+      const m = r.match(/^(.*?)[eE]([-+]?\d+)$/);
+      if (m) return loc(m[1]) + '·10<sup>' + String(+m[2]).replace('-', '−') + '</sup>';
+      return loc(r);
+    };
+    const args = (n) => par(n.args.map(H).join('; '));
+    function H(n) {
+      switch (n.k) {
+        case 'n': return num(n);
+        case 'v': return n.name === 'Ans' ? 'Ans' : `<i>${HE(n.name)}</i>`;
+        case 'neg': return '−' + (isAdd(n.a) ? par(H(n.a)) : H(n.a));
+        case 'pct': return H(n.a) + '%';
+        case 'deg': return (atom(n.a) ? H(n.a) : par(H(n.a))) + '°';
+        case 'bin': {
+          const { a, b } = n;
+          if (n.op === '+') return H(a) + ' + ' + (b.k === 'neg' ? par(H(b)) : H(b));
+          if (n.op === '-') return H(a) + ' − ' + (isAdd(b) || b.k === 'neg' ? par(H(b)) : H(b));
+          if (n.op === '*') {
+            const A = isAdd(a) ? par(H(a)) : H(a), B = isAdd(b) || b.k === 'neg' ? par(H(b)) : H(b);
+            return A + (n.imp && b.k !== 'n' ? '' : '·') + B;
+          }
+          if (n.op === '/') return `<span class="mf"><span>${H(a)}</span><span>${H(b)}</span></span>`;
+          if (n.op === '^') {
+            if (a.k === 'call' && NAMEDPOW.has(a.f)) return `<span class="fn">${a.f}</span><sup>${H(b)}</sup>${args(a)}`;
+            return (atom(a) ? H(a) : par(H(a))) + `<sup>${H(b)}</sup>`;
+          }
+          break;
+        }
+        case 'call': {
+          const A = n.args;
+          if (n.f === 'sqrt') return `<span class="mr"><span class="rs">√</span><span class="mo">${H(A[0])}</span></span>`;
+          if (n.f === 'cbrt') return `<span class="mr"><span class="rs"><sup class="ri">3</sup>√</span><span class="mo">${H(A[0])}</span></span>`;
+          if (n.f === 'root') return `<span class="mr"><span class="rs"><sup class="ri">${H(A[1])}</sup>√</span><span class="mo">${H(A[0])}</span></span>`;
+          if (n.f === 'abs') return `|${H(A[0])}|`;
+          if (n.f === 'fact') return (atom(A[0]) ? H(A[0]) : par(H(A[0]))) + '!';
+          if (n.f === 'exp') return `<i>e</i><sup>${H(A[0])}</sup>`;
+          return `<span class="fn">${n.f}</span>${args(n)}`;
+        }
+      }
+      return '?';
+    }
+    return H(node);
+  }
+  function prettyLine(line, known, dec) {
+    const clean = String(line).replace(/(#|\/\/).*$/, '').trim();
+    if (!clean) return null;
+    const { name, expr } = splitAssign(clean);
+    if (!expr.trim()) return null;
+    const ast = parse(expr, known || new Set());
+    const body = toHTML(ast, dec);
+    return name ? `<i>${HE(name)}</i> = ${body}` : body;
+  }
+
   return {
     setMode: (m) => { S.mode = m === 'rad' ? 'rad' : 'deg'; }, getMode: () => S.mode,
     FN, CalcError, normalize, parse, ev, evalExpr, evalLines, collectVars, splitAssign,
-    fmt, fmtIns, supStr, roundAt, roundPair, student, stats, linfit, indirect,
+    fmt, fmtIns, supStr, toHTML, prettyLine, roundAt, roundPair, student, stats, linfit, indirect,
   };
 })();
 
@@ -1062,8 +1159,15 @@ function preview() {
     if (l.kind === 'error') return `<div class="row err"><span class="ln">${l.idx + 1}</span><span class="src">${src}</span><span class="val">${esc(l.msg)}</span></div>`;
     return `<div class="row" data-v="${l.value}"><span class="ln">${l.idx + 1}</span><span class="src">${src}</span><span class="val">${l.name ? esc(l.name) + ' = ' : '= '}${esc(F(l.value))}</span></div>`;
   }).join('');
-  const out = $('#out');
   const cl = caretLine();
+  const curLine = ed.value.split('\n')[cl] || '';
+  let ph = '';
+  try {
+    const plain = /^\s*([^=]*=)?\s*-?[\d.,]+\s*(#.*)?$/.test(curLine);
+    if (!plain) ph = Calc.prettyLine(curLine, new Set(Object.keys(lastRes.env)), ST.dec) || '';
+  } catch (e) { ph = ''; }
+  $('#pretty').innerHTML = ph;
+  const out = $('#out');
   const cur = items.find((l) => l.idx === cl) || items[items.length - 1];
   out.classList.remove('err');
   if (!cur) out.textContent = '0';
@@ -1096,17 +1200,71 @@ function insert(txt, back = 0) {
 }
 function keepFocus() { if (ed.inputMode === 'none' || document.activeElement === ed) ed.focus({ preventScroll: true }); }
 const FN_TOKENS = Object.keys(Calc.FN).sort((a, b) => b.length - a.length);
+function setCaret(p) { ed.setSelectionRange(p, p); changed(); keepFocus(); }
+function smartInsert(ins) {
+  const s = ed.selectionStart, e = ed.selectionEnd, v = ed.value;
+  if (ins === ')' && s === e && v[s] === ')') { setCaret(s + 1); return; } // перешагиваем уже стоящую скобку
+  if (ins.endsWith('()')) {
+    const head = ins.slice(0, -1); // «sin(»
+    if (s !== e) { ed.setRangeText(head + v.slice(s, e) + ')', s, e, 'end'); changed(); keepFocus(); return; } // выделение — в аргумент
+    insert(ins, 1); return;
+  }
+  insert(ins);
+}
+// начало «операнда» перед курсором: число, имя, (…), функция(…), со степенями
+function operandStart(v, p) {
+  let i = p;
+  const word = /[0-9A-Za-zА-Яа-яЁёΑ-Ωα-ωπ.,²³°!']/;
+  for (;;) {
+    if (v[i - 1] === ')') {
+      let d = 0, j = i - 1;
+      for (; j >= 0; j--) { if (v[j] === ')') d++; else if (v[j] === '(') { d--; if (d === 0) break; } }
+      if (j < 0) return i;
+      i = j;
+      while (i > 0 && /[A-Za-z√∛^]/.test(v[i - 1])) i--;
+    } else if (word.test(v[i - 1] || '')) {
+      while (i > 0 && word.test(v[i - 1])) i--;
+    } else return i;
+    if (v[i - 1] === '^') { i--; continue; }
+    return i;
+  }
+}
+function insertFrac() {
+  const s = ed.selectionStart, e = ed.selectionEnd, v = ed.value;
+  if (s !== e) { const sel = v.slice(s, e); ed.setRangeText('(' + sel + ')/()', s, e, 'end'); setCaret(s + sel.length + 4); return; }
+  const st = operandStart(v, s);
+  if (st < s) {
+    const numr = v.slice(st, s);
+    const atom = /^(\d+([.,]\d+)?|[A-Za-zА-Яа-яЁёΑ-Ωα-ωπ][\w']*)$/.test(numr);
+    const w = atom ? numr : '(' + numr + ')';
+    ed.setRangeText(w + '/()', st, s, 'end'); setCaret(st + w.length + 2); return;
+  }
+  ed.setRangeText('()/()', s, s, 'end'); setCaret(s + 1); // курсор в числитель
+}
+function nextSlot() {
+  const v = ed.value; let p = ed.selectionStart;
+  const i = v.indexOf(')', p);
+  if (i < 0) { setCaret(v.length); return; }
+  p = i + 1;
+  if (v.slice(p, p + 2) === '/(' || v.slice(p, p + 2) === '^(') p += 2; // из числителя — сразу в знаменатель
+  setCaret(p);
+}
 function backspace() {
   let s = ed.selectionStart; const e = ed.selectionEnd;
   if (s !== e) { ed.setRangeText('', s, e, 'end'); changed(); return; }
   if (s === 0) return;
-  const before = ed.value.slice(0, s);
-  let n = 1;
-  const m = before.match(/([A-Za-z]+)\($/);
+  const before = ed.value.slice(0, s), after = ed.value.slice(s);
+  let n = 1, m2 = 0;
+  const m = before.match(/([A-Za-z0-9]+)\($/);
   if (m && FN_TOKENS.includes(m[1])) n = m[0].length; // стираем «arcsin(» целиком
   else if (before.endsWith('·10^(')) n = 5;
+  else if (/[√∛^]\($/.test(before)) n = 2;
   else if (before.endsWith('Ans')) n = 3;
-  ed.setRangeText('', s - n, s, 'end'); changed();
+  if (before.endsWith('(') && after[0] === ')') { // пустые скобки — убираем пару
+    m2 = 1;
+    if (after.startsWith(')/()')) m2 = 4; // пустая дробь «()/()»
+  }
+  ed.setRangeText('', s - n, s + m2, 'end'); changed();
 }
 function moveCaret(d) {
   const p = Math.max(0, Math.min(ed.value.length, ed.selectionStart + d));
@@ -1138,23 +1296,25 @@ function compute() {
 }
 
 /* клавиши */
+// [подпись, что вставить, класс, html-подпись]. «()» в конце вставки — курсор встаёт внутрь скобок.
 const KEYS = [
-  [['sin', 'sin(', 'f trig'], ['cos', 'cos(', 'f trig'], ['tg', 'tg(', 'f trig'], ['ctg', 'ctg(', 'f trig'], ['√', '√(', 'f']],
-  [['arcsin', 'arcsin(', 'f trig arc'], ['arccos', 'arccos(', 'f trig arc'], ['arctg', 'arctg(', 'f trig arc'], ['arcctg', 'arcctg(', 'f trig arc'], ['x²', '²', 'f']],
-  [['ln', 'ln(', 'f'], ['lg', 'lg(', 'f'], ['xʸ', '^', 'f'], ['(', '(', 'f'], [')', ')', 'f']],
-  [['π', 'π', 'f'], ['e', 'e', 'f'], ['°', '°', 'f'], ['Ans', 'Ans', 'f'], ['=', ' = ', 'f']],
-  [['7', '7', 'num'], ['8', '8', 'num'], ['9', '9', 'num'], ['⌫', '@bs', 'ctl'], ['AC', '@ac', 'ctl']],
+  [['sin', 'sin()', 'f trig'], ['cos', 'cos()', 'f trig'], ['tg', 'tg()', 'f trig'], ['ctg', 'ctg()', 'f trig'], ['√', '√()', 'f']],
+  [['arcsin', 'arcsin()', 'f trig arc'], ['arccos', 'arccos()', 'f trig arc'], ['arctg', 'arctg()', 'f trig arc'], ['arcctg', 'arcctg()', 'f trig arc'], ['x²', '²', 'f']],
+  [['дробь', '@frac', 'f slot', '<span class="kfr"><i></i><b></b><i></i></span>'], ['(', '(', 'f'], [')', ')', 'f'], ['xʸ', '^()', 'f'], ['⇥', '@next', 'f slot']],
+  [['ln', 'ln()', 'f'], ['lg', 'lg()', 'f'], ['π', 'π', 'f'], ['e', 'e', 'f'], ['°', '°', 'f']],
+  [['7', '7', 'num'], ['8', '8', 'num'], ['9', '9', 'num'], ['⌫', '@bs', 'bs'], ['AC', '@ac', 'ctl']],
   [['4', '4', 'num'], ['5', '5', 'num'], ['6', '6', 'num'], ['×', '·', 'op'], ['÷', '/', 'op']],
   [['1', '1', 'num'], ['2', '2', 'num'], ['3', '3', 'num'], ['+', '+', 'op'], ['−', '-', 'op']],
-  [['0', '0', 'num'], [',', ',', 'num'], ['×10ˣ', '·10^(', 'ctl'], ['◀', '@l', 'ctl'], ['▶', '@r', 'ctl']],
-  [['↵', '@nl', 'ctl'], ['Посчитать', '@go', 'go']],
+  [['0', '0', 'num'], [',', ',', 'num'], ['×10ˣ', '·10^()', 'ctl'], ['◀', '@l', 'ctl'], ['▶', '@r', 'ctl']],
+  [['↵', '@nl', 'nl'], ['=', ' = ', 'op'], ['Посчитать', '@go', 'go']],
 ];
+const KEY_ARIA = { '@nl': 'Новая строка', '@bs': 'Стереть', '@frac': 'Дробь', '@next': 'Перейти в следующую клетку (из числителя в знаменатель, из скобок наружу)' };
 const kp = $('#keypad');
-KEYS.flat().forEach(([label, ins, cls]) => {
+KEYS.flat().forEach(([label, ins, cls, html]) => {
   const b = document.createElement('button');
-  b.className = 'k ' + cls; b.type = 'button'; b.textContent = label; b.dataset.ins = ins;
-  if (ins === '@nl') b.setAttribute('aria-label', 'Новая строка');
-  if (ins === '@bs') b.setAttribute('aria-label', 'Стереть');
+  b.className = 'k ' + cls; b.type = 'button'; b.dataset.ins = ins;
+  if (html) b.innerHTML = html; else b.textContent = label;
+  if (KEY_ARIA[ins]) { b.setAttribute('aria-label', KEY_ARIA[ins]); b.title = KEY_ARIA[ins]; }
   kp.appendChild(b);
 });
 let holdT = 0, holdI = 0;
@@ -1178,7 +1338,9 @@ kp.addEventListener('click', (e) => {
     case '@r': moveCaret(1); break;
     case '@nl': insert('\n'); break;
     case '@go': compute(); break;
-    default: insert(ins);
+    case '@frac': insertFrac(); break;
+    case '@next': nextSlot(); break;
+    default: smartInsert(ins);
   }
 });
 
@@ -1200,6 +1362,7 @@ function toggleKbd() {
 }
 
 const FX = [
+  ['Ans', 'Ans', 'прошлый результат'],
   ['sh', 'sh(', 'гиперб. синус'], ['ch', 'ch(', 'гиперб. косинус'], ['th', 'th(', 'гиперб. тангенс'],
   ['cth', 'cth(', 'гиперб. котангенс'], ['arsh', 'arsh(', 'обратный sh'], ['arch', 'arch(', 'обратный ch'],
   ['arth', 'arth(', 'обратный th'], ['∛x', '∛(', 'кубический корень'], ['ⁿ√x', 'root(', 'root(x; n)'],
@@ -1258,6 +1421,7 @@ function openHist() {
 const OCR = { worker: null, loading: null, kind: '' };
 const CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
 const WL = '0123456789.,+-*/=()^:xX '; // пробел обязателен, иначе числа в строке склеиваются
+const WL_ALL = WL + 'abcdefghijklmnopqrstuvwyzABCDEFGHIJKLMNOPQRSTUVWYZ';
 function ocrStatus(msg, cls) { const s = $('#ocrStatus'); s.textContent = msg; s.className = 'status ' + (cls || ''); }
 function loadScript(src) {
   return new Promise((res, rej) => {
@@ -1318,40 +1482,50 @@ function loadImage(file) {
     img.src = url;
   });
 }
-function preprocess(img, bin) {
+const median = (arr) => { const s = [...arr].sort((x, y) => x - y); return s.length ? s[s.length >> 1] : 0; };
+function prepCanvas(img, maxSide) {
   const w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height;
   const long = Math.max(w0, h0);
-  const sc = long > 2400 ? 2400 / long : long < 1400 ? Math.min(3, 1400 / long) : 1;
+  const sc = long > maxSide ? maxSide / long : long < 1200 ? Math.min(2.5, 1200 / long) : 1;
   const c = document.createElement('canvas');
-  c.width = Math.round(w0 * sc); c.height = Math.round(h0 * sc);
+  c.width = Math.max(1, Math.round(w0 * sc)); c.height = Math.max(1, Math.round(h0 * sc));
   const x = c.getContext('2d', { willReadFrequently: true });
-  x.imageSmoothingQuality = 'high';
-  x.drawImage(img, 0, 0, c.width, c.height);
-  const d = x.getImageData(0, 0, c.width, c.height), p = d.data, N = p.length / 4;
-  const g = new Uint8ClampedArray(N), hist = new Uint32Array(256);
-  for (let i = 0; i < N; i++) { const v = (p[4 * i] * 299 + p[4 * i + 1] * 587 + p[4 * i + 2] * 114) / 1000; g[i] = v; hist[g[i]]++; }
+  x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, c.width, c.height);
+  const d = x.getImageData(0, 0, c.width, c.height), p = d.data, N = c.width * c.height;
+  const g = new Uint8Array(N);
+  for (let i = 0; i < N; i++) g[i] = (p[4 * i] * 299 + p[4 * i + 1] * 587 + p[4 * i + 2] * 114) / 1000;
+  return { c, x, d, g, W: c.width, H: c.height };
+}
+// Адаптивный порог: каждая точка сравнивается со средней яркостью вокруг неё,
+// поэтому тень от телефона и неровный свет не превращаются в чёрные пятна.
+function toBW(P) {
+  const { W, H, g, d, x } = P, W1 = W + 1, I = new Uint32Array(W1 * (H + 1));
+  for (let y = 0; y < H; y++) { let row = 0; for (let xx = 0; xx < W; xx++) { row += g[y * W + xx]; I[(y + 1) * W1 + xx + 1] = I[y * W1 + xx + 1] + row; } }
+  const r = Math.max(10, Math.round(Math.min(W, H) / 14)), T = 0.16;
+  const bin = new Uint8Array(W * H), p = d.data;
+  for (let y = 0; y < H; y++) {
+    const y0 = Math.max(0, y - r), y1 = Math.min(H - 1, y + r);
+    for (let xx = 0; xx < W; xx++) {
+      const x0 = Math.max(0, xx - r), x1 = Math.min(W - 1, xx + r);
+      const cnt = (x1 - x0 + 1) * (y1 - y0 + 1);
+      const sum = I[(y1 + 1) * W1 + x1 + 1] - I[y0 * W1 + x1 + 1] - I[(y1 + 1) * W1 + x0] + I[y0 * W1 + x0];
+      const k = y * W + xx, ink = g[k] * cnt < sum * (1 - T) ? 1 : 0;
+      bin[k] = ink; const v = ink ? 0 : 255; p[4 * k] = p[4 * k + 1] = p[4 * k + 2] = v; p[4 * k + 3] = 255;
+    }
+  }
+  x.putImageData(d, 0, 0);
+  return bin;
+}
+function stretch(P) {
+  const { W, H, g, d, x } = P, N = W * H, p = d.data, hist = new Uint32Array(256);
+  for (let i = 0; i < N; i++) hist[g[i]]++;
   let lo = 0, hi = 255, acc = 0;
   for (let i = 0; i < 256; i++) { acc += hist[i]; if (acc > N * 0.01) { lo = i; break; } }
   acc = 0;
   for (let i = 255; i >= 0; i--) { acc += hist[i]; if (acc > N * 0.01) { hi = i; break; } }
-  let thr = -1;
-  if (bin) { // порог Оцу
-    let sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
-    let sB = 0, wB = 0, best = 0;
-    for (let i = 0; i < 256; i++) {
-      wB += hist[i]; if (!wB) continue; const wF = N - wB; if (!wF) break;
-      sB += i * hist[i]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) ** 2;
-      if (v > best) { best = v; thr = i; }
-    }
-  }
   const span = Math.max(1, hi - lo);
-  for (let i = 0; i < N; i++) {
-    let v = g[i];
-    v = thr >= 0 ? (v > thr ? 255 : 0) : ((v - lo) * 255) / span;
-    p[4 * i] = p[4 * i + 1] = p[4 * i + 2] = v; p[4 * i + 3] = 255;
-  }
+  for (let i = 0; i < N; i++) { const v = ((g[i] - lo) * 255) / span; p[4 * i] = p[4 * i + 1] = p[4 * i + 2] = v; p[4 * i + 3] = 255; }
   x.putImageData(d, 0, 0);
-  return c;
 }
 function showPreview(c) {
   const pv = $('#ocrPrev');
@@ -1359,6 +1533,7 @@ function showPreview(c) {
   pv.width = Math.round(c.width * k); pv.height = Math.round(c.height * k);
   pv.getContext('2d').drawImage(c, 0, 0, pv.width, pv.height); pv.hidden = false;
 }
+
 async function nativeDetect(c) {
   if (!('TextDetector' in window)) return null;
   try {
@@ -1374,6 +1549,209 @@ async function nativeDetect(c) {
     return out;
   } catch (e) { return null; }
 }
+
+/* ---- разбор структуры формулы: дроби, корни, степени ---- */
+function label(bin, W, H) {
+  const lab = new Int32Array(W * H), st = new Int32Array(W * H), comps = [];
+  let id = 0;
+  for (let p0 = 0; p0 < W * H; p0++) {
+    if (!bin[p0] || lab[p0]) continue;
+    id++; let sp = 0; st[sp++] = p0; lab[p0] = id;
+    let x0 = W, y0 = H, x1 = 0, y1 = 0, area = 0, sx = 0;
+    while (sp) {
+      const q = st[--sp], y = (q / W) | 0, xx = q - y * W;
+      area++; sx += xx;
+      if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      if (xx > 0 && bin[q - 1] && !lab[q - 1]) { lab[q - 1] = id; st[sp++] = q - 1; }
+      if (xx < W - 1 && bin[q + 1] && !lab[q + 1]) { lab[q + 1] = id; st[sp++] = q + 1; }
+      if (y > 0 && bin[q - W] && !lab[q - W]) { lab[q - W] = id; st[sp++] = q - W; }
+      if (y < H - 1 && bin[q + W] && !lab[q + W]) { lab[q + W] = id; st[sp++] = q + W; }
+    }
+    const w = x1 - x0 + 1, h = y1 - y0 + 1;
+    comps.push({ kind: 'c', id, x0, y0, x1, y1, w, h, area, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, inkx: sx / area });
+  }
+  return { lab, comps };
+}
+function mkBlock(kind, parts, extra) {
+  const b = { kind, x0: Infinity, y0: Infinity, x1: -1, y1: -1, ...extra };
+  for (const p of parts) { b.x0 = Math.min(b.x0, p.x0); b.y0 = Math.min(b.y0, p.y0); b.x1 = Math.max(b.x1, p.x1); b.y1 = Math.max(b.y1, p.y1); }
+  b.w = b.x1 - b.x0 + 1; b.h = b.y1 - b.y0 + 1; b.cx = (b.x0 + b.x1) / 2;
+  b.cy = kind === 'frac' ? extra.bar.cy : (b.y0 + b.y1) / 2;
+  return b;
+}
+function grow(bar, pool, dir, ctx) { // собираем всё, что стоит над (dir=-1) или под (dir=1) чертой
+  const tol = 0.2 * ctx.medH, gapMax = 1.4 * ctx.medH;
+  const inX = (it) => it.cx >= bar.x0 - tol && it.cx <= bar.x1 + tol;
+  const cand = pool.filter((it) => it !== bar && inX(it) && (dir < 0 ? it.cy < bar.cy && it.y1 <= bar.y1 : it.cy > bar.cy && it.y0 >= bar.y0));
+  cand.sort(dir < 0 ? (a, b) => b.y1 - a.y1 : (a, b) => a.y0 - b.y0);
+  let edge = dir < 0 ? bar.y0 : bar.y1; const out = [];
+  for (const it of cand) {
+    const gap = dir < 0 ? edge - it.y1 : it.y0 - edge;
+    if (gap <= gapMax) { out.push(it); edge = dir < 0 ? Math.min(edge, it.y0) : Math.max(edge, it.y1); }
+  }
+  return out;
+}
+const spanW = (arr) => Math.max(...arr.map((i) => i.x1)) - Math.min(...arr.map((i) => i.x0)) + 1;
+function structure(items, ctx) {
+  items = [...items];
+  // корни: тонкий значок, внутри которого стоят другие символы
+  const rads = items.filter((it) => it.kind === 'c' && !it.flat && it.w >= 1.1 * ctx.medH && it.h >= 0.8 * ctx.medH && it.area / (it.w * it.h) < 0.3)
+    .sort((a, b) => b.w * b.h - a.w * a.h);
+  for (const r of rads) {
+    if (!items.includes(r)) continue;
+    const inner = items.filter((it) => it !== r && it.cx > r.x0 + 0.3 * Math.min(r.h, r.w) && it.cx <= r.x1 + 2 && it.cy > r.y0 && it.cy < r.y1 + 1);
+    if (!inner.length) continue;
+    items = items.filter((it) => it !== r && !inner.includes(it));
+    items.push(mkBlock('sqrt', [r, ...inner], { inner }));
+    ctx.found++;
+  }
+  // дроби: черта, над ней и под ней что-то есть
+  const bars = items.filter((it) => it.kind === 'c' && it.flat && it.w <= 0.95 * ctx.W).sort((a, b) => b.w - a.w);
+  for (const bar of bars) {
+    if (!items.includes(bar)) continue;
+    const pool = items.filter((it) => it !== bar);
+    const up = grow(bar, pool, -1, ctx), dn = grow(bar, pool, 1, ctx);
+    if (!up.length || !dn.length) continue;
+    if (Math.max(spanW(up), spanW(dn)) < 0.45 * bar.w) continue;
+    items = items.filter((it) => it !== bar && !up.includes(it) && !dn.includes(it));
+    items.push(mkBlock('frac', [bar, ...up, ...dn], { num: up, den: dn, bar }));
+    ctx.found++;
+  }
+  return items;
+}
+function analyze(bin, W, H) {
+  const { lab, comps } = label(bin, W, H);
+  const cs = comps.filter((c) => c.area >= 10 && !(c.w > 0.92 * W || c.h > 0.9 * H));
+  const medH = median(cs.filter((c) => c.h >= 0.4 * c.w && c.h >= 6).map((c) => c.h)) || 20;
+  const tiny = [], main = [];
+  for (const c of cs) {
+    if (c.h < 0.3 * medH && c.w < 0.3 * medH) tiny.push(c);
+    else { c.flat = c.w >= 1.8 * c.h && c.w >= 0.45 * medH && c.h <= 0.45 * medH; main.push(c); }
+  }
+  const ctx = { medH, W, H, lab, tiny, found: 0, done: 0, used: new Set() };
+  const top = structure(main, ctx);
+  const lines = [];
+  for (const it of [...top].sort((a, b) => b.h - a.h)) { // сначала крупное — оно задаёт строку
+    const L = lines.find((l) => it.cy >= l.y0 - 0.25 * l.hh && it.cy <= l.y1 + 0.25 * l.hh);
+    if (L) L.items.push(it); else lines.push({ y0: it.y0, y1: it.y1, hh: it.h, items: [it] });
+  }
+  lines.sort((a, b) => a.y0 - b.y0);
+  return { lines: lines.map((l) => l.items), ctx };
+}
+async function ocrCrop(items, ctx) {
+  const { lab, W, medH } = ctx;
+  let x0 = Infinity, y0 = Infinity, x1 = -1, y1 = -1; const ids = new Set();
+  for (const c of items) { ids.add(c.id); x0 = Math.min(x0, c.x0); y0 = Math.min(y0, c.y0); x1 = Math.max(x1, c.x1); y1 = Math.max(y1, c.y1); }
+  const ex = 0.35 * medH, X0 = x0, X1 = x1, Y0 = y0, Y1 = y1;
+  for (const t of ctx.tiny) { // точки, запятые, точки над i
+    if (!ctx.used.has(t.id) && t.cx >= X0 - 2 && t.cx <= X1 + ex * 0.6 && t.cy >= Y0 - ex && t.cy <= Y1 + ex) {
+      ids.add(t.id); x0 = Math.min(x0, t.x0); y0 = Math.min(y0, t.y0); x1 = Math.max(x1, t.x1); y1 = Math.max(y1, t.y1);
+    }
+  }
+  const w = x1 - x0 + 1, h = y1 - y0 + 1;
+  const src = document.createElement('canvas'); src.width = w; src.height = h;
+  const sx = src.getContext('2d'), im = sx.createImageData(w, h), p = im.data;
+  for (let y = 0; y < h; y++) {
+    for (let xx = 0; xx < w; xx++) {
+      const k = (y * w + xx) * 4, v = ids.has(lab[(y + y0) * W + xx + x0]) ? 0 : 255;
+      p[k] = p[k + 1] = p[k + 2] = v; p[k + 3] = 255;
+    }
+  }
+  sx.putImageData(im, 0, 0);
+  const hs = items.filter((c) => !c.flat).map((c) => c.h);
+  const ref = hs.length ? Math.max(median(hs), 0.5 * medH) : medH;
+  const sc = Math.max(0.4, Math.min(5, 46 / ref)), pad = 24;
+  const out = document.createElement('canvas');
+  out.width = Math.round(w * sc) + 2 * pad; out.height = Math.round(h * sc) + 2 * pad;
+  const ox = out.getContext('2d'); ox.fillStyle = '#fff'; ox.fillRect(0, 0, out.width, out.height);
+  ox.imageSmoothingEnabled = true; ox.drawImage(src, pad, pad, w * sc, h * sc);
+  await OCR.worker.setParameters({ tessedit_pageseg_mode: items.length === 1 ? '10' : '7', tessedit_char_whitelist: $('#ocrDigits').checked ? WL : WL_ALL });
+  const r = await OCR.worker.recognize(out);
+  ctx.done++; ocrStatus(`Читаю формулу по частям… ${ctx.done}`);
+  return r.data.text.replace(/\s+/g, ' ').trim();
+}
+function findDot(c, nx, ctx) { // мелкая точка между двумя символами
+  const m = ctx.medH;
+  return ctx.tiny.find((t) => !ctx.used.has(t.id) && t.cx > c.x1 - 1 && t.cx < nx.x0 + 1
+    && t.w / t.h > 0.3 && t.w / t.h < 2.5 && t.h >= 0.06 * m
+    && t.cy > Math.min(c.y0, nx.y0) && t.cy < Math.max(c.y1, nx.y1) + 0.35 * m);
+}
+async function ocrGroup(group, ctx) { // обычные символы в строке; приподнятые мелкие — это степень
+  group.sort((a, b) => a.x0 - b.x0);
+  const mains = group.filter((c) => c.h >= 0.55 * ctx.medH);
+  const base = mains.length ? median(mains.map((c) => c.y1)) : null;
+  const xh = mains.length ? median(mains.map((c) => c.h)) : ctx.medH;
+  const parts = [];
+  for (let k = 0; k < group.length; k++) {
+    const c = group[k];
+    const sup = base !== null && c.y1 < base - 0.4 * xh && c.h < 0.85 * xh;
+    const last = parts[parts.length - 1];
+    if (last && !last.sep && last.sup === sup) last.items.push(c); else parts.push({ sup, items: [c] });
+    const nx = group[k + 1];
+    if (nx && !sup) {
+      const dot = findDot(c, nx, ctx);
+      if (dot) { // на средней линии — умножение, у основания — десятичная запятая
+        ctx.used.add(dot.id);
+        const b = base !== null ? base : Math.max(c.y1, nx.y1);
+        parts.push({ sep: dot.cy < b - 0.28 * xh ? '·' : ',' });
+      }
+    }
+  }
+  let s = '';
+  for (const p of parts) {
+    if (p.sep) { s += p.sep; continue; }
+    const t = await ocrCrop(p.items, ctx);
+    if (t) s += p.sup && s ? '^(' + t + ')' : t;
+  }
+  return s;
+}
+async function renderSeq(items, ctx) {
+  items = structure(items, ctx).sort((a, b) => a.x0 - b.x0);
+  const pieces = []; let group = [], prev = null;
+  const flush = async () => { if (group.length) { pieces.push(await ocrGroup(group, ctx)); group = []; } prev = null; };
+  const raised = (c) => prev && c.kind === 'c' && !c.flat && c.y1 < prev.refY - 0.15 * ctx.medH && c.h < 0.9 * ctx.medH;
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (!group.length && raised(it)) { // степень над дробью, корнем или скобкой
+      const ex = [it];
+      while (items[i + 1] && raised(items[i + 1])) ex.push(items[++i]);
+      const t = await ocrCrop(ex, ctx);
+      if (t) pieces[pieces.length - 1] = prev.wrap ? '(' + pieces[pieces.length - 1] + ')^(' + t + ')' : pieces[pieces.length - 1] + '^(' + t + ')';
+      prev = null; continue;
+    }
+    if (it.kind === 'frac') { await flush(); pieces.push('(' + (await renderSeq(it.num, ctx)) + ')/(' + (await renderSeq(it.den, ctx)) + ')'); prev = { refY: it.bar.cy, wrap: true }; }
+    else if (it.kind === 'sqrt') { await flush(); pieces.push('√(' + (await renderSeq(it.inner, ctx)) + ')'); prev = { refY: it.cy, wrap: true }; }
+    else if (it.flat) {
+      await flush();
+      const nx = items[i + 1];
+      if (nx && nx.kind === 'c' && nx.flat && Math.min(it.x1, nx.x1) - Math.max(it.x0, nx.x0) > 0.5 * Math.min(it.w, nx.w)) { pieces.push('='); i++; }
+      else pieces.push('-');
+    } else if (it.h >= 1.45 * ctx.medH && it.w <= 0.55 * it.h) { // высокая скобка
+      await flush();
+      const off = (it.inkx - it.cx) / it.w, ch = off < -0.07 ? '(' : off > 0.07 ? ')' : '|';
+      pieces.push(ch); prev = ch === ')' ? { refY: it.cy, wrap: false } : null;
+    } else group.push(it);
+  }
+  await flush();
+  return pieces.join('');
+}
+function renderOcrPretty() {
+  const box = $('#ocrPretty'), t = $('#ocrText').value;
+  if (!t.trim()) { box.innerHTML = ''; return; }
+  const known = new Set(); const htm = [];
+  for (const line of t.split('\n')) {
+    if (!line.trim()) continue;
+    try {
+      const { name } = Calc.splitAssign(line.replace(/(#|\/\/).*$/, '').trim());
+      const ph = Calc.prettyLine(line, known, ST.dec);
+      if (name) known.add(name);
+      if (ph) htm.push(`<div>${ph}</div>`);
+    } catch (e) { htm.push(`<div class="bad">${esc(line)} — ${esc(e.message)}</div>`); }
+  }
+  box.innerHTML = htm.join('');
+}
+$('#ocrText').addEventListener('input', renderOcrPretty);
+
 $('#ocrFile').addEventListener('change', async (e) => {
   const file = e.target.files && e.target.files[0]; e.target.value = '';
   if (!file) return;
@@ -1381,9 +1759,21 @@ $('#ocrFile').addEventListener('change', async (e) => {
   try {
     ocrStatus('Готовлю изображение…');
     const img = await loadImage(file);
-    const c = preprocess(img, $('#ocrBin').checked);
-    showPreview(c);
-    let text = await nativeDetect(c), kind = 'встроенный распознаватель браузера';
+    const mode = $('#ocrPsm').value;
+    const P = prepCanvas(img, 2000);
+    const wantBW = mode === 'auto' || mode === 'formula' || $('#ocrBin').checked;
+    const bin = wantBW ? toBW(P) : (stretch(P), null);
+    showPreview(P.c);
+    let text = null, kind = '';
+    let A = null;
+    if (mode === 'auto' || mode === 'formula') {
+      ocrStatus('Ищу дроби, корни и степени…');
+      A = analyze(bin, P.W, P.H);
+      if (mode === 'auto' && !A.ctx.found) A = null; // дробей нет — читаем как обычный текст
+    }
+    if (!A) {
+      text = await nativeDetect(P.c); kind = 'встроенный распознаватель браузера';
+    }
     if (text === null) {
       ocrStatus('Запускаю распознавание…');
       const w = await getWorker();
@@ -1391,23 +1781,31 @@ $('#ocrFile').addEventListener('change', async (e) => {
         ocrStatus('Распознавание недоступно здесь. Открой приложение по ссылке (см. «Справка → Установка») или используй запасной путь ниже — текст из галереи + «Вставить из буфера».', 'bad');
         $('details', $('#ocrSheet')).open = true; return;
       }
-      await w.setParameters({
-        tessedit_char_whitelist: $('#ocrDigits').checked ? WL : '',
-        tessedit_pageseg_mode: $('#ocrPsm').value, preserve_interword_spaces: '1',
-      });
-      const r = await w.recognize(c);
-      text = r.data.text; kind = OCR.kind;
+      kind = OCR.kind;
+      if (A) {
+        const lines = [];
+        for (const l of A.lines) lines.push(await renderSeq(l, A.ctx));
+        text = lines.filter((s) => s.trim()).join('\n');
+        kind += `; найдено дробей и корней: ${A.ctx.found}`;
+      } else {
+        await w.setParameters({
+          tessedit_char_whitelist: $('#ocrDigits').checked ? WL : WL_ALL,
+          tessedit_pageseg_mode: /^\d+$/.test(mode) ? mode : '6', preserve_interword_spaces: '1',
+        });
+        text = (await w.recognize(P.c)).data.text;
+      }
     }
     pb.hidden = true;
     const cleaned = cleanOcr(text);
     $('#ocrText').value = cleaned;
-    ocrStatus(cleaned ? `Готово (${kind}). Проверь цифры и нажми «Посчитать».` : 'Текст не найден. Обрежь фото до нужного места и сними ровнее.', cleaned ? 'ok' : 'bad');
+    renderOcrPretty();
+    ocrStatus(cleaned ? `Готово (${kind}). Сравни формулу ниже с фото, поправь текст и нажми «Посчитать».` : 'Текст не найден. Обрежь фото до нужного места и сними ровнее.', cleaned ? 'ok' : 'bad');
   } catch (err) {
     pb.hidden = true; ocrStatus('Ошибка: ' + err.message, 'bad');
   }
 });
 $('#ocrPaste').addEventListener('click', async () => {
-  try { const t = await navigator.clipboard.readText(); $('#ocrText').value = cleanOcr(t); ocrStatus('Вставлено из буфера. Проверь и нажми «Посчитать».', 'ok'); }
+  try { const t = await navigator.clipboard.readText(); $('#ocrText').value = cleanOcr(t); renderOcrPretty(); ocrStatus('Вставлено из буфера. Проверь и нажми «Посчитать».', 'ok'); }
   catch (e) { ocrStatus('Браузер не дал прочитать буфер — нажми в поле ниже и вставь вручную (долгое нажатие → Вставить).', 'bad'); $('#ocrText').focus(); }
 });
 function cleanOcr(t) {
@@ -1422,7 +1820,7 @@ function cleanOcr(t) {
 }
 const NUM_RE = /-?\d+(?:[.,]\d+)?(?:[eE][-+]?\d+)?/g;
 const nums = (s) => (Calc.normalize(s).replace(/−/g, '-').match(NUM_RE) || []).map((x) => parseFloat(x.replace(',', '.')));
-$('#ocrClean').addEventListener('click', () => { $('#ocrText').value = cleanOcr($('#ocrText').value); });
+$('#ocrClean').addEventListener('click', () => { $('#ocrText').value = cleanOcr($('#ocrText').value); renderOcrPretty(); });
 $('#ocrGo').addEventListener('click', () => {
   const t = $('#ocrText').value.trim(); if (!t) return toast('Поле пустое');
   closeSheets(); showTab('calc');

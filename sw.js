@@ -1,5 +1,5 @@
 /* ЛабКальк: хранит приложение и движок распознавания в телефоне, чтобы всё работало без интернета */
-const V = 'labcalc-v1';
+const V = 'labcalc-v2';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 const OCR = ['./tesseract/tesseract.min.js', './tesseract/worker.min.js',
   './tesseract/core/tesseract-core-simd-lstm.wasm.js', './tesseract/core/tesseract-core-lstm.wasm.js',
